@@ -39,6 +39,10 @@ int main()
     printf("Now loading data\n");
     load_data(&loaded_struct);
 
+    free(loaded_struct.name);
+    free(instance_of_struct->name);
+    free(instance_of_struct);
+
     return 0;
 }
 
@@ -84,13 +88,15 @@ int load_data(mock_struct *ms_ptr)
         printf("Error opening file\n");
         return -1;
     }
-
+    // Read Name Len
     fread(&ms_ptr->name_len, sizeof(ms_ptr->name_len), 1, load_file);
     ms_ptr->name = malloc(ms_ptr->name_len + 1);
+    // Read Name
     fread(ms_ptr->name, sizeof(char), ms_ptr->name_len, load_file);
     ms_ptr->name[ms_ptr->name_len] = '\0';
-
+    // Game Status
     fread(&ms_ptr->game_over, sizeof(ms_ptr->game_over), 1, load_file);
+    // Board
     fread(ms_ptr->board, sizeof(ms_ptr->board), 1, load_file);
 
     printf("Loaded File Contents\nName: %s\nGame Over Status: %s\n", ms_ptr->name, ms_ptr->game_over ? "true" : "false");
@@ -137,6 +143,7 @@ int save_data(mock_struct *ms_ptr)
     fwrite(&ms_ptr->game_over, sizeof(ms_ptr->game_over), 1, save_file);
     // Board
     fwrite(ms_ptr->board, sizeof(ms_ptr->board), 1, save_file);
+
     // Close ptr
     fclose(save_file);
     return 0;
