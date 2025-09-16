@@ -1,0 +1,9 @@
+#Defaults
+.vscode
+
+#Save files
+*.gamesave
+
+#Binaries
+save_file
+project_2

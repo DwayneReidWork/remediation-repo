@@ -1,5 +1,4 @@
-// save load w/regex
-// nested loops
+// save load w/regex?
 
 // create a save file with unix timestamp. (1 hr 3 mins)
 // Load file and print text in file.
@@ -26,13 +25,15 @@ void fill_struct(Player *p_ptr);
 int main()
 {
     Player *player1 = malloc(sizeof(Player));
-    Player loaded_player_data;
     printf("Filling Data\n");
     fill_struct(player1);
     printf("Saving Data\n");
     save_data(player1);
     printf("Loading Data\n");
-    load_data(&loaded_player_data);
+    load_data(player1);
+
+    free(player1->username);
+    free(player1);
 }
 
 int save_data(Player *p_ptr)
@@ -55,10 +56,10 @@ int save_data(Player *p_ptr)
         printf("Error: Filename buffer is too small.\n");
         return 1;
     }
-    // merger username and time
-    snprintf(save_name, sizeof(save_name), "%s%ld", p_ptr->username, (long)timestamp);
+    // merger username and time to format "name_time.gamesave" [str char longint str]
+    snprintf(save_name, sizeof(save_name), "%s%c%ld%s", p_ptr->username, '_', (long)timestamp, ".gamesave");
 
-    printf("User: %s\n", save_name);
+    printf("Save File Name: %s\n", save_name);
 
     FILE *savefp = fopen(save_name, "wb");
 
@@ -70,7 +71,7 @@ int save_data(Player *p_ptr)
 
     fwrite(&p_ptr->username_len, sizeof(p_ptr->username_len), 1, savefp);
     fwrite(p_ptr->username, sizeof(char), p_ptr->username_len, savefp);
-
+    fclose(savefp);
     return 0;
 }
 
@@ -95,34 +96,66 @@ int load_data(Player *p_ptr)
 
     while (NULL != (dir_entry = readdir(dir_ptr)))
     {
-        if (strstr(dir_entry->d_name, p_ptr->username) != NULL)
+        if (p_ptr->username == NULL)
         {
-            char filepath[MAX_FILENAME_SIZE];
-            snprintf(filepath, sizeof(filepath), "%s/%s", directory_path, dir_entry->d_name);
-
-            FILE *load_file = fopen(filepath, "rb");
-            if (!load_file)
-            {
-                printf("Error opening file.");
-                return -1;
-            }
-
-            // Name Len
-            fread(&p_ptr->username_len, sizeof(p_ptr->username_len), 1, load_file);
-            p_ptr->username = malloc(p_ptr->username_len + 1);
-
-            // Name
-            fread(p_ptr->username, sizeof(char), p_ptr->username_len, load_file);
-            p_ptr->username[p_ptr->username_len] = '\0';
+            printf("Uninitialized Username\n");
+            return -1;
         }
-    }
 
-    if (closedir(dir_ptr) == -1)
-    {
-        printf("Error closing directory");
-        return -1;
+        if (!dir_ptr)
+        {
+            printf("Error opening directory\n");
+            return -1;
+        }
+
+        struct dirent *dir_entry;
+        char filepath[MAX_FILENAME_SIZE] = {0};
+        // file found counter
+        int file_found = 0;
+
+        // Search for first with username
+        while ((dir_entry = readdir(dir_ptr)) != NULL)
+        {
+            // check for username in filename
+            if (strstr(dir_entry->d_name, p_ptr->username) != NULL)
+            {
+                // format them together to load
+                snprintf(filepath, sizeof(filepath), "./%s", dir_entry->d_name);
+                file_found = 1;
+                break;
+            }
+        }
+
+        closedir(dir_ptr);
+
+        if (!file_found)
+        {
+            printf("No save file found for username %s\n", p_ptr->username);
+            return -1;
+        }
+
+        FILE *load_file = fopen(filepath, "rb");
+        if (!load_file)
+        {
+            printf("Error opening file %s\n", filepath);
+            return -1;
+        }
+
+        if (p_ptr->username)
+            free(p_ptr->username);
+        // Username Len
+        fread(&p_ptr->username_len, sizeof(p_ptr->username_len), 1, load_file);
+
+        // Malloc for user
+        p_ptr->username = malloc(p_ptr->username_len + 1);
+        fread(p_ptr->username, sizeof(char), p_ptr->username_len, load_file);
+        p_ptr->username[p_ptr->username_len] = '\0';
+
+        fclose(load_file);
+
+        printf("Loaded username: %s\nFrom file: %s\n", p_ptr->username, filepath);
+        return 0;
     }
-    return 0;
 }
 
 /// @brief Populate struct with initial mock data
