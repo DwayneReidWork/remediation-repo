@@ -21,7 +21,8 @@ int main()
         perror("Failed to allocate memory");
         return 1;
     }
-    populate_board(game, 'S');
+    char filler = 'X';
+    populate_board(game, filler);
     print_board(game);
     return 0;
 }
@@ -29,13 +30,13 @@ int main()
 /// @brief Given ptr to struct and a char will generate a 5x5 board of the char
 /// @param game ptr to game struct
 /// @param whatever a single char
-void populate_board(Game *game, char whatever)
+void populate_board(Game *game, char filler)
 {
     for (int i = 0; i < BOARD_ROW; i++)
     {
         for (int j = 0; j < BOARD_COL; j++)
         {
-            game->board[i][j] = whatever;
+            game->board[i][j] = filler;
         }
     }
 }
