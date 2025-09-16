@@ -1,5 +1,7 @@
 #Defaults
+__pycache__
 .vscode
+.venv
 
 #Save files
 *.gamesave
@@ -7,3 +9,4 @@
 #Binaries
 save_file
 project_2
+remediation_project
