@@ -30,21 +30,20 @@ typedef struct Node
 char *read_string(FILE *fp);
 int add_item(Node *head, Item *item_to_add);
 int exit_cleanup(Item *item_ptr);
-int open_load(Item *item_ptr, Node **head);
+int load(Item *item_ptr, Node **head);
 int parse_num_choice();
 int prompt_user_selection(bool keep_looping, Node *head, Item *item_ptr);
 int remove_item(Node *head, Item *item_to_add);
 int save(Item *item_ptr);
 int search_item(Node *head, int id);
+int update_item(Node *head, Item *item_to_update);
 int validate_name_or_category(char *str);
 
 // Node Funcs
 int getLastNode(Node *head);
 Node *createNode(Item data);
 void insertAtEnd(Node **head, Item data);
-void deleteAtBeginning(Node **head);
 void deleteAtPosition(Node **head, int position);
-void deleteAtEnd(Node **head);
 void freeNode(Node *temp);
 void printListForward(Node *head);
 
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
 
     Node *head = NULL;
 
-    open_load(item_ptr, &head);
+    load(item_ptr, &head);
     printf("Proof data loaded: %d %s %s\n", item_ptr->id, item_ptr->name, item_ptr->category);
 
     // in loop prompt user for input to add/search/update/delete/list
@@ -95,7 +94,6 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
     switch (selection)
     {
     case 1:
-        printf("Case %d recieved\n", selection);
         add_item(head, item_ptr);
         break;
     case 2:
@@ -104,16 +102,19 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
         search_item(head, selection);
         break;
     case 3:
-        printf("Case %d recieved\n", selection);
+        printf("Please input the ID number of the item you wish to update.\n");
+        selection = parse_num_choice();
+        update_item(head, item_ptr);
         break;
     case 4:
-        printf("Case %d recieved\n", selection);
+        printf("Please input the ID number of the item you wish to delete.\n");
+        selection = parse_num_choice();
+        deleteAtPosition(&head, selection);
         break;
     case 5:
         printListForward(head);
         break;
     case 6:
-        printf("Case %d recieved\n", selection);
         keepLooping = 0;
         break;
     default:
@@ -123,7 +124,7 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
     return keepLooping;
 }
 
-int open_load(Item *item_ptr, Node **head)
+int load(Item *item_ptr, Node **head)
 {
     if (NULL == item_ptr)
     {
@@ -290,79 +291,52 @@ void insertAtEnd(Node **head, Item data)
     newNode->prev = temp;
 }
 
-void deleteAtBeginning(Node **head)
-{
-    // checking if the DLL is empty
-    if (*head == NULL)
-    {
-        printf("The list is already empty.\n");
-        return;
-    }
-    Node *temp = *head;
-    *head = (*head)->next;
-    if (*head != NULL)
-    {
-        (*head)->prev = NULL;
-    }
-    freeNode(temp);
-}
-
 void deleteAtPosition(Node **head, int position)
 {
-    if (*head == NULL)
+    if (!head || !*head)
     {
         printf("The list is already empty.\n");
         return;
     }
+
     Node *temp = *head;
+
+    // If index is 1, remove head
     if (position == 1)
     {
-        deleteAtBeginning(head);
+        *head = temp->next;
+        if (*head)
+        {
+            (*head)->prev = NULL;
+        }
+        freeNode(temp);
         return;
     }
+
+    // Traverse to the node at the given position
     for (int i = 1; temp != NULL && i < position; i++)
     {
         temp = temp->next;
     }
+
+    // If index is out of range
     if (temp == NULL)
     {
-        printf("Position is greater than the number of "
-               "nodes.\n");
+        printf("Position is greater than the number of nodes.\n");
         return;
     }
-    if (temp->next != NULL)
-    {
-        temp->next->prev = temp->prev;
-    }
-    if (temp->prev != NULL)
+
+    // Unlink the node
+    if (temp->prev)
     {
         temp->prev->next = temp->next;
     }
+    if (temp->next)
+    {
+        temp->next->prev = temp->prev;
+    }
+
     freeNode(temp);
-}
-
-void deleteAtEnd(Node **head)
-{
-    // checking if DLL is empty
-    if (*head == NULL)
-    {
-        printf("The list is already empty.\n");
-        return;
-    }
-
-    Node *temp = *head;
-    if (temp->next == NULL)
-    {
-        *head = NULL;
-        freeNode(temp);
-        return;
-    }
-    while (temp->next != NULL)
-    {
-        temp = temp->next;
-    }
-    temp->prev->next = NULL;
-    free(temp);
 }
 
 void printListForward(Node *head)
@@ -409,6 +383,7 @@ void freeNode(Node *node)
 
 int add_item(Node *head, Item *item_to_add)
 {
+    printf("Inside Add.\n");
     if (NULL == item_to_add)
     {
         printf("Recieved Null item pointer.\n");
@@ -421,6 +396,7 @@ int add_item(Node *head, Item *item_to_add)
 // TODO
 int update_item(Node *head, Item *item_to_update)
 {
+    printf("Inside Update.\n");
     if (NULL == item_to_update)
     {
         printf("Recieved Null item pointer.\n");
