@@ -1,4 +1,6 @@
 #include <errno.h>
+#include <regex.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,17 +21,19 @@ typedef struct
 
 typedef struct Node
 {
-    Item data;
+    Item item_data;
     struct Node *next;
     struct Node *prev;
 } Node;
 
-// Funct
+// Funcs
 char *read_string(FILE *fp);
+int add_item(Node *head, Item *item_to_add);
 int exit_cleanup(Item *item_ptr);
-int open_load(Item *item_ptr);
-int prompt_user();
+int open_load(Item *item_ptr, Node *head);
+int prompt_user_selection(bool keep_looping, Node *head, Item *item_ptr);
 int save(Item *item_ptr);
+int validate_name_or_category(char *str);
 
 // Node Funcs
 Node *createNode(Item data);
@@ -37,6 +41,7 @@ void insertAtEnd(Node **head, Item data);
 void deleteAtBeginning(Node **head);
 void deleteAtPosition(Node **head, int position);
 void deleteAtEnd(Node **head);
+void freeNode(Node *temp);
 void printListForward(Node *head);
 
 int main(int argc, char *argv[])
@@ -48,15 +53,28 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    open_load(item_ptr);
+    Node *head = NULL;
+
+    open_load(item_ptr, head);
+    printf("Proof data loaded: %d %s %s\n", item_ptr->id, item_ptr->name, item_ptr->category);
 
     // in loop prompt user for input to add/search/update/delete/list
     // on exit of loop save file
-    while (1)
+    bool keepLooping = true;
+    while (keepLooping)
     {
-        prompt_user();
+        keepLooping = prompt_user_selection(keepLooping, head, item_ptr);
     }
-    save(item_ptr);
+    // dummy data
+    // item_ptr->id = 1;
+    // // Use strdup so that malloc can free somehing and not break cleanup
+    // item_ptr->category = strdup("Vegetable");
+    // item_ptr->name = strdup("Carrot");
+    // item_ptr->quantity = 11;
+    // item_ptr->price = 2.99;
+    // insertAtEnd(&head, *item_ptr);
+    // printListForward(head);
+    // save(item_ptr);
 
     printf("Memory Cleanup.\n");
     exit_cleanup(item_ptr);
@@ -64,16 +82,25 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int prompt_user()
+int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
 {
     int selection;
     printf("Please make a selection(1-6): \n1. Add Item\n2. Search for item\n3. Update Item\n4. delete Item\n5. List items\n6. Exit\n");
-    scanf("%d", &selection);
+    if (1 != scanf("%d", &selection))
+    {
+        printf("Invalid selection. Must be a num 1-6.\n");
+        // clear buffer so no infinity loop
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ;
+        return keepLooping;
+    }
 
     switch (selection)
     {
     case 1:
         printf("Case %d recieved\n", selection);
+        add_item(head, item_ptr);
         break;
     case 2:
         printf("Case %d recieved\n", selection);
@@ -89,14 +116,15 @@ int prompt_user()
         break;
     case 6:
         printf("Case %d recieved\n", selection);
-        break;
+        keepLooping = 0;
+        return keepLooping;
     default:
         printf("Please select a number 1 through 6.\n");
         break;
     }
 }
 
-int open_load(Item *item_ptr)
+int open_load(Item *item_ptr, Node *head)
 {
     if (NULL == item_ptr)
     {
@@ -120,6 +148,7 @@ int open_load(Item *item_ptr)
     item_ptr->category = read_string(fp);
     fread(&item_ptr->quantity, sizeof(item_ptr->quantity), 1, fp);
     fread(&item_ptr->price, sizeof(item_ptr->price), 1, fp);
+    insertAtEnd(&head, *item_ptr);
 
     // frees (In main)
     free(read_string(fp));
@@ -127,7 +156,8 @@ int open_load(Item *item_ptr)
 
     return 0;
 }
-int save_file(Item *item_ptr)
+
+int save(Item *item_ptr)
 {
     if (NULL == item_ptr)
     {
@@ -142,44 +172,15 @@ int save_file(Item *item_ptr)
         printf("Error opening file to save : %s\n", strerror(errno));
         return ERROR;
     }
+    // createNode
     fwrite(&item_ptr->id, sizeof(item_ptr->id), 1, fp);
-    fwrite(item_ptr->name, strlen(item_ptr->name), 1, fp);
-    fwrite(&item_ptr->category, strlen(item_ptr->category), 1, fp);
+    // Name and cat need +1 for null term
+    fwrite(item_ptr->name, strlen(item_ptr->name) + 1, 1, fp);
+    fwrite(item_ptr->category, strlen(item_ptr->category) + 1, 1, fp);
     // TODO
     fwrite(&item_ptr->quantity, sizeof(item_ptr->quantity), 1, fp);
     fwrite(&item_ptr->price, sizeof(item_ptr->price), 1, fp);
 }
-
-/*
-delete item(Node *head, id)
-{
-search through LL for id and remove updating prev->next and next->last
-}
-
-update item(Node *head, id)
-{
-regex check for valid quantity/price/name
-search through LL for id and edit node->item->price
-}
-
-add item(Node *head, id)
-{
-regex check for valid quantity/price/name
-add item to end
-}
-
-list item(*head)
-{
-iterate through list until null printing each item
-}
-
-search item(*head)
-{
-secondary prompt for name - category
-(or name by default and category with flag) [argparse]
-
-}
-*/
 
 char *read_string(FILE *fp)
 {
@@ -203,11 +204,11 @@ char *read_string(FILE *fp)
         size++;
     }
 
-    if (ch == EOF)
-    {
-        fprintf(stderr, "Unexpected EOF\n");
-        return NULL;
-    }
+    // if (ch == EOF)
+    // {
+    //     fprintf(stderr, "Unexpected EOF\n");
+    //     return NULL;
+    // }
 
     // Allocate memory (+1 for null terminator)
     output = malloc(size + 1);
@@ -242,8 +243,14 @@ char *read_string(FILE *fp)
     return output;
 }
 
-int exit_free(Item *item_ptr)
+int exit_cleanup(Item *item_ptr)
 {
+    if (!item_ptr)
+    {
+        return 0;
+    }
+    free(item_ptr->name);
+    free(item_ptr->category);
     free(item_ptr);
     return 0;
 }
@@ -251,7 +258,13 @@ int exit_free(Item *item_ptr)
 Node *createNode(Item data)
 {
     Node *newNode = (Node *)malloc(sizeof(Node));
-    newNode->data = data;
+
+    newNode->item_data.id = data.id;
+    newNode->item_data.name = strdup(data.name);
+    newNode->item_data.category = strdup(data.category);
+    newNode->item_data.quantity = data.quantity;
+    newNode->item_data.price = data.price;
+
     newNode->next = NULL;
     newNode->prev = NULL;
     return newNode;
@@ -292,7 +305,7 @@ void deleteAtBeginning(Node **head)
     {
         (*head)->prev = NULL;
     }
-    free(temp);
+    freeNode(temp);
 }
 
 void deleteAtPosition(Node **head, int position)
@@ -326,7 +339,7 @@ void deleteAtPosition(Node **head, int position)
     {
         temp->prev->next = temp->next;
     }
-    free(temp);
+    freeNode(temp);
 }
 
 void deleteAtEnd(Node **head)
@@ -342,7 +355,7 @@ void deleteAtEnd(Node **head)
     if (temp->next == NULL)
     {
         *head = NULL;
-        free(temp);
+        freeNode(temp);
         return;
     }
     while (temp->next != NULL)
@@ -356,15 +369,91 @@ void deleteAtEnd(Node **head)
 void printListForward(Node *head)
 {
     Node *temp = head;
-    printf("Forward List: ");
+    printf("Forward List:\n");
     while (temp != NULL)
     {
-        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n", temp->data.id,
-               temp->data.name,
-               temp->data.category,
-               temp->data.quantity,
-               temp->data.price);
+        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n", temp->item_data.id,
+               temp->item_data.name,
+               temp->item_data.category,
+               temp->item_data.quantity,
+               temp->item_data.price);
         temp = temp->next;
     }
     printf("\n");
 }
+
+void freeNode(Node *node)
+{
+    if (!node)
+        return;
+    free(node->item_data.name);
+    free(node->item_data.category);
+    free(node);
+}
+
+int add_item(Node *head, Item *item_to_add)
+{
+    // NULL Check for head? Head can be null in blank list right?
+    if (NULL == item_to_add)
+    {
+        printf("Recieved Null item pointer.\n");
+    }
+
+    int input;
+    while (1)
+    {
+        printf("Please input the ID # of the item you wish to add: ");
+        if (scanf("%d", &input) == 1)
+        {
+            item_to_add->id = input;
+            break;
+        }
+        else
+        {
+            printf("Invalid input. Must be a number.\n");
+            // Clear Buffer
+            int c;
+
+            while ((c = getchar()) != '\n' && c != EOF)
+                ;
+        }
+    }
+}
+
+int validate_name_or_category(char *str)
+{
+    regex_t regex;
+    const char *pattern = "^[A-Za-z0-9 ]+$";
+    int ret;
+
+    if (regcomp(&regex, pattern, REG_EXTENDED))
+    {
+        printf("Could not compile regex\n");
+        return 0;
+    }
+
+    ret = regexec(&regex, str, 0, NULL, 0);
+    regfree(&regex);
+
+    return (ret == 0); // 0 means match
+}
+
+/*
+delete item(Node *head, id)
+{
+search through LL for id and remove updating prev->next and next->last
+}
+
+update item(Node *head, id)
+{
+regex check for valid quantity/price/name
+search through LL for id and edit node->item->price
+}
+
+
+search item(*head)
+{
+secondary prompt for name - category
+(or name by default and category with flag) [argparse]
+}
+*/

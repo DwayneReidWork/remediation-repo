@@ -2,6 +2,7 @@
 __pycache__
 .vscode
 .venv
+.txt
 
 #Save files
 *.gamesave
