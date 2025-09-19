@@ -30,12 +30,16 @@ typedef struct Node
 char *read_string(FILE *fp);
 int add_item(Node *head, Item *item_to_add);
 int exit_cleanup(Item *item_ptr);
-int open_load(Item *item_ptr, Node *head);
+int open_load(Item *item_ptr, Node **head);
+int parse_num_choice();
 int prompt_user_selection(bool keep_looping, Node *head, Item *item_ptr);
+int remove_item(Node *head, Item *item_to_add);
 int save(Item *item_ptr);
+int search_item(Node *head, int id);
 int validate_name_or_category(char *str);
 
 // Node Funcs
+int getLastNode(Node *head);
 Node *createNode(Item data);
 void insertAtEnd(Node **head, Item data);
 void deleteAtBeginning(Node **head);
@@ -55,7 +59,7 @@ int main(int argc, char *argv[])
 
     Node *head = NULL;
 
-    open_load(item_ptr, head);
+    open_load(item_ptr, &head);
     printf("Proof data loaded: %d %s %s\n", item_ptr->id, item_ptr->name, item_ptr->category);
 
     // in loop prompt user for input to add/search/update/delete/list
@@ -65,7 +69,7 @@ int main(int argc, char *argv[])
     {
         keepLooping = prompt_user_selection(keepLooping, head, item_ptr);
     }
-    // dummy data
+    // // dummy data
     // item_ptr->id = 1;
     // // Use strdup so that malloc can free somehing and not break cleanup
     // item_ptr->category = strdup("Vegetable");
@@ -86,15 +90,7 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
 {
     int selection;
     printf("Please make a selection(1-6): \n1. Add Item\n2. Search for item\n3. Update Item\n4. delete Item\n5. List items\n6. Exit\n");
-    if (1 != scanf("%d", &selection))
-    {
-        printf("Invalid selection. Must be a num 1-6.\n");
-        // clear buffer so no infinity loop
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF)
-            ;
-        return keepLooping;
-    }
+    selection = parse_num_choice();
 
     switch (selection)
     {
@@ -103,7 +99,9 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
         add_item(head, item_ptr);
         break;
     case 2:
-        printf("Case %d recieved\n", selection);
+        printf("Please input the ID number of the item you wish to search.\n");
+        selection = parse_num_choice();
+        search_item(head, selection);
         break;
     case 3:
         printf("Case %d recieved\n", selection);
@@ -112,19 +110,20 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
         printf("Case %d recieved\n", selection);
         break;
     case 5:
-        printf("Case %d recieved\n", selection);
+        printListForward(head);
         break;
     case 6:
         printf("Case %d recieved\n", selection);
         keepLooping = 0;
-        return keepLooping;
+        break;
     default:
         printf("Please select a number 1 through 6.\n");
         break;
     }
+    return keepLooping;
 }
 
-int open_load(Item *item_ptr, Node *head)
+int open_load(Item *item_ptr, Node **head)
 {
     if (NULL == item_ptr)
     {
@@ -148,7 +147,7 @@ int open_load(Item *item_ptr, Node *head)
     item_ptr->category = read_string(fp);
     fread(&item_ptr->quantity, sizeof(item_ptr->quantity), 1, fp);
     fread(&item_ptr->price, sizeof(item_ptr->price), 1, fp);
-    insertAtEnd(&head, *item_ptr);
+    insertAtEnd(head, *item_ptr);
 
     // frees (In main)
     free(read_string(fp));
@@ -382,6 +381,23 @@ void printListForward(Node *head)
     printf("\n");
 }
 
+int getLastNode(Node *head)
+{
+    if (head == NULL)
+    {
+        return 0;
+    }
+    else
+    {
+        struct Node *current = head;
+        while (current->next != NULL)
+        {
+            current = current->next;
+        }
+        return current->item_data.id;
+    }
+}
+
 void freeNode(Node *node)
 {
     if (!node)
@@ -393,31 +409,44 @@ void freeNode(Node *node)
 
 int add_item(Node *head, Item *item_to_add)
 {
-    // NULL Check for head? Head can be null in blank list right?
     if (NULL == item_to_add)
     {
         printf("Recieved Null item pointer.\n");
     }
+    int end = getLastNode(head);
+    item_to_add->id = end + 1;
+    return 0;
+}
 
-    int input;
-    while (1)
+// TODO
+int update_item(Node *head, Item *item_to_update)
+{
+    if (NULL == item_to_update)
     {
-        printf("Please input the ID # of the item you wish to add: ");
-        if (scanf("%d", &input) == 1)
-        {
-            item_to_add->id = input;
-            break;
-        }
-        else
-        {
-            printf("Invalid input. Must be a number.\n");
-            // Clear Buffer
-            int c;
-
-            while ((c = getchar()) != '\n' && c != EOF)
-                ;
-        }
+        printf("Recieved Null item pointer.\n");
     }
+
+    return 0;
+}
+
+// TODO
+int remove_item(Node *head, Item *item_to_add)
+{
+    int selection;
+    printf("Please enter the ID of the item you wish to remove.\n");
+    if (1 != scanf("%d", &selection))
+    {
+        printf("Invalid selection. Must be numerical.\n");
+        // clear buffer so no infinity loop
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ; // On a new line because its technically after an empty curly brace
+    }
+    else
+    {
+        deleteAtPosition(&head, selection);
+    }
+    return 0;
 }
 
 int validate_name_or_category(char *str)
@@ -438,22 +467,83 @@ int validate_name_or_category(char *str)
     return (ret == 0); // 0 means match
 }
 
-/*
-delete item(Node *head, id)
+int search_item(Node *head, int id)
 {
-search through LL for id and remove updating prev->next and next->last
+    Node *current = head;
+
+    while (current != NULL)
+    {
+        if (current->item_data.id == id)
+        {
+            printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n",
+                   current->item_data.id,
+                   current->item_data.name,
+                   current->item_data.category,
+                   current->item_data.quantity,
+                   current->item_data.price);
+            return 0;
+        }
+        current = current->next;
+    }
+
+    printf("Id not found\n");
+    return -1;
 }
 
-update item(Node *head, id)
+int parse_num_choice()
+{
+    int selection;
+    if (1 != scanf("%d", &selection))
+    {
+        printf("Invalid selection. Must be numerical\n");
+        // clear buffer so no infinity loop
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ; // On a new line because its technically after an empty curly brace
+    }
+    return selection;
+}
+/*
+update item(Node *head, int id)
 {
 regex check for valid quantity/price/name
 search through LL for id and edit node->item->price
 }
 
-
-search item(*head)
+int add_item(Node *head, Item *item_to_add)
 {
-secondary prompt for name - category
-(or name by default and category with flag) [argparse]
+    printf("Inside add item func\n");
+    //     // NULL Check for head? Head can be null in blank list right?
+    //     if (NULL == item_to_add)
+    //     {
+    //         printf("Recieved Null item pointer.\n");
+    //     }
+
+    // int end = getLastNode(head);
+    // item_to_add->id = end + 1;
+
+    return 0;
+
+    //     int input;
+    //     while (1)
+    //     {
+    //         printf("Please input the ID # of the item you wish to add: ");
+    //         if (scanf("%d", &input) == 1)
+    //         {
+    //             item_to_add->id = input;
+    //             break;
+    //         }
+    //         else
+    //         {
+    //             printf("Invalid input. Must be a number.\n");
+    //             // Clear Buffer
+    //             int c;
+
+    //             while ((c = getchar()) != '\n' && c != EOF)
+    //                 ;
+    //         }
+    //     }
+}
+
 }
 */
