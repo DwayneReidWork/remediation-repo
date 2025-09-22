@@ -8,8 +8,15 @@ __pycache__
 *.gamesave
 
 #Binaries
+<<<<<<< HEAD
 loops
 save_file
 project_2
 remediation_project
+=======
+save_file
+project_2
+remediation_project
+loops
+>>>>>>> Mem_Mgmt_and_File_IO
 memory_mgmt
