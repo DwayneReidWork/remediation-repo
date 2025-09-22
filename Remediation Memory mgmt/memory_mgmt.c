@@ -46,6 +46,7 @@ int getLastNode(Node *head);
 Node *createNode(Item data);
 void deleteAtPosition(Node **head, int position);
 void freeNode(Node *temp);
+void freeList(Node **head);
 void insertAtEnd(Node **head, Item data);
 void printListForward(Node *head);
 
@@ -85,6 +86,7 @@ int main(int argc, char *argv[])
     save(head);
     printf("Memory Cleanup.\n");
     exit_cleanup(item_ptr);
+    freeList(&head);
     printf("Exiting.\n");
     return 0;
 }
@@ -158,6 +160,8 @@ int load(Node **head)
         fread(&item.price, sizeof(float), 1, fp);
 
         insertAtEnd(head, item);
+        free(item.category);
+        free(item.name);
     }
 
     fclose(fp);
@@ -426,15 +430,11 @@ int add_item(Node **head)
     tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
     len = strnlen(tmp_buff, BUFF_SIZE - 1);
 
-    // Malloc struct based on buffer size
-    name = malloc(len + 1);
+    // Calloc struct based on buffer size
+    name = calloc(len, sizeof(char));
 
-    // null terminate string
-    name[strlen(tmp_buff) + 1] = '\0';
-
-    // copy data
+    // copy data because calloc zeroes out buff
     memcpy(name, tmp_buff, len);
-    name[len] = '\0';
 
     // validate input
     if (1 != validate_name_or_category(name))
@@ -459,14 +459,10 @@ int add_item(Node **head)
     len = strnlen(tmp_buff, BUFF_SIZE - 1);
 
     // Malloc struct based on buffer size
-    category = malloc(len + 1);
-
-    // null terminate string
-    category[strlen(tmp_buff) + 1] = '\0';
+    category = calloc(len, sizeof(char));
 
     // copy data
     memcpy(category, tmp_buff, len);
-    category[len] = '\0';
 
     if (1 != validate_name_or_category(category))
     {
@@ -531,20 +527,17 @@ int update_item(Node *head, int id)
             tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
             size_t len = strnlen(tmp_buff, BUFF_SIZE - 1);
 
-            // Malloc struct based on buffer size
-            name = malloc(len + 1);
+            // Calloc struct based on buffer size
+            name = calloc(len, sizeof(char));
 
-            // null terminate string
-            name[strlen(tmp_buff) + 1] = '\0';
-
-            // copy data
+            // copy data because calloc zeroes out buff
             memcpy(name, tmp_buff, len);
-            name[len] = '\0';
 
             // validate input
             if (1 != validate_name_or_category(name))
             {
                 printf("Name {%s} failed parse check.\n", name);
+                free(name);
                 return ERROR;
             }
 
@@ -557,17 +550,21 @@ int update_item(Node *head, int id)
             if (NULL == fgets(tmp_buff, BUFF_SIZE, stdin))
             {
                 printf("Error reading category.\n");
+                free(category);
                 return -ERROR;
             }
             tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
 
-            category = malloc(strnlen(tmp_buff, BUFF_SIZE - 1));
-            category[strlen(tmp_buff) + 1] = '\0';
+            // Malloc struct based on buffer size
+            category = calloc(len, sizeof(char));
 
-            strcpy(category, tmp_buff);
+            // copy data
+            memcpy(category, tmp_buff, len);
             if (1 != validate_name_or_category(category))
             {
                 printf("Category {%s} failed parse check.\n", category);
+                free(category);
+                return -ERROR;
             }
 
             current->item_data.category = category;
@@ -703,4 +700,17 @@ float parse_float()
     }
 
     return selection;
+}
+
+void freeList(Node **head)
+{
+    Node *current = *head;
+    Node *next;
+    while (current)
+    {
+        next = current->next;
+        freeNode(current);
+        current = next;
+    }
+    *head = NULL;
 }
