@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BUFF_SIZE 256
 #define ERROR -1
 #define FILEPATH "inventory.txt"
 
@@ -28,15 +29,16 @@ typedef struct Node
 
 // Funcs
 char *read_string(FILE *fp);
-int add_item(Node *head, Item *item_to_add);
+int add_item(Node **head);
 int exit_cleanup(Item *item_ptr);
-int load(Item *item_ptr, Node **head);
+int load(Node **head);
+int parse_float();
 int parse_num_choice();
 int prompt_user_selection(bool keep_looping, Node *head, Item *item_ptr);
 int remove_item(Node *head, Item *item_to_add);
-int save(Item *item_ptr);
+int save(Node *head);
 int search_item(Node *head, int id);
-int update_item(Node *head, Item *item_to_update);
+int update_item(Node *head, int id);
 int validate_name_or_category(char *str);
 
 // Node Funcs
@@ -53,13 +55,12 @@ int main(int argc, char *argv[])
     if (NULL == item_ptr)
     {
         printf("Malloc failed\n");
-        return -1;
+        return ERROR;
     }
 
     Node *head = NULL;
 
-    load(item_ptr, &head);
-    printf("Proof data loaded: %d %s %s\n", item_ptr->id, item_ptr->name, item_ptr->category);
+    load(&head);
 
     // in loop prompt user for input to add/search/update/delete/list
     // on exit of loop save file
@@ -77,8 +78,9 @@ int main(int argc, char *argv[])
     // item_ptr->price = 2.99;
     // insertAtEnd(&head, *item_ptr);
     // printListForward(head);
-    // save(item_ptr);
 
+    printf("Saving. . .\n");
+    save(head);
     printf("Memory Cleanup.\n");
     exit_cleanup(item_ptr);
     printf("Exiting.\n");
@@ -94,7 +96,7 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
     switch (selection)
     {
     case 1:
-        add_item(head, item_ptr);
+        add_item(&head);
         break;
     case 2:
         printf("Please input the ID number of the item you wish to search.\n");
@@ -104,7 +106,7 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
     case 3:
         printf("Please input the ID number of the item you wish to update.\n");
         selection = parse_num_choice();
-        update_item(head, item_ptr);
+        update_item(head, selection);
         break;
     case 4:
         printf("Please input the ID number of the item you wish to delete.\n");
@@ -124,62 +126,71 @@ int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
     return keepLooping;
 }
 
-int load(Item *item_ptr, Node **head)
+int load(Node **head)
 {
-    if (NULL == item_ptr)
-    {
-        printf("Null Pointer passed in.\n");
-        return ERROR;
-    }
-
-    memset(item_ptr, 0, sizeof(Item));
     FILE *fp = fopen(FILEPATH, "rb");
-
-    if (NULL == fp)
+    if (!fp)
     {
-        printf("Error opening file: %s\n", strerror(errno));
+        printf("No file to load.\n");
         return ERROR;
     }
 
-    // fread struct from file field by field
-    fread(&item_ptr->id, sizeof(item_ptr->id), 1, fp);
-    // Read string mallocs and deals with ptr
-    item_ptr->name = read_string(fp);
-    item_ptr->category = read_string(fp);
-    fread(&item_ptr->quantity, sizeof(item_ptr->quantity), 1, fp);
-    fread(&item_ptr->price, sizeof(item_ptr->price), 1, fp);
-    insertAtEnd(head, *item_ptr);
+    while (!feof(fp))
+    {
+        Item item;
+        int read_id = fread(&item.id, sizeof(int), 1, fp);
+        if (read_id != 1)
+            // stop at EOF or read error
+            break;
 
-    // frees (In main)
-    free(read_string(fp));
-    printf("Load Successful.\n");
+        item.name = read_string(fp);
+        if (!item.name)
+            // failed read
+            break;
 
+        item.category = read_string(fp);
+        if (!item.category)
+            break;
+
+        fread(&item.quantity, sizeof(int), 1, fp);
+        fread(&item.price, sizeof(float), 1, fp);
+
+        insertAtEnd(head, item);
+    }
+
+    fclose(fp);
     return 0;
 }
 
-int save(Item *item_ptr)
+int save(Node *head)
 {
-    if (NULL == item_ptr)
+    if (!head)
     {
-        printf("Null Pointer passed in.\n");
+        printf("Nothing to save.\n");
         return ERROR;
     }
 
     FILE *fp = fopen(FILEPATH, "wb");
-
-    if (NULL == fp)
+    if (!fp)
     {
-        printf("Error opening file to save : %s\n", strerror(errno));
+        printf("Error opening file to save: %s\n", strerror(errno));
         return ERROR;
     }
-    // createNode
-    fwrite(&item_ptr->id, sizeof(item_ptr->id), 1, fp);
-    // Name and cat need +1 for null term
-    fwrite(item_ptr->name, strlen(item_ptr->name) + 1, 1, fp);
-    fwrite(item_ptr->category, strlen(item_ptr->category) + 1, 1, fp);
-    // TODO
-    fwrite(&item_ptr->quantity, sizeof(item_ptr->quantity), 1, fp);
-    fwrite(&item_ptr->price, sizeof(item_ptr->price), 1, fp);
+
+    Node *current = head;
+    while (current != NULL)
+    {
+        fwrite(&current->item_data.id, sizeof(int), 1, fp);
+        fwrite(current->item_data.name, strlen(current->item_data.name) + 1, 1, fp);
+        fwrite(current->item_data.category, strlen(current->item_data.category) + 1, 1, fp);
+        fwrite(&current->item_data.quantity, sizeof(int), 1, fp);
+        fwrite(&current->item_data.price, sizeof(float), 1, fp);
+
+        current = current->next;
+    }
+
+    fclose(fp);
+    return 0;
 }
 
 char *read_string(FILE *fp)
@@ -203,12 +214,6 @@ char *read_string(FILE *fp)
     {
         size++;
     }
-
-    // if (ch == EOF)
-    // {
-    //     fprintf(stderr, "Unexpected EOF\n");
-    //     return NULL;
-    // }
 
     // Allocate memory (+1 for null terminator)
     output = malloc(size + 1);
@@ -342,10 +347,10 @@ void deleteAtPosition(Node **head, int position)
 void printListForward(Node *head)
 {
     Node *temp = head;
-    printf("Forward List:\n");
+    printf("\nForward List:\n");
     while (temp != NULL)
     {
-        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n", temp->item_data.id,
+        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n\n", temp->item_data.id,
                temp->item_data.name,
                temp->item_data.category,
                temp->item_data.quantity,
@@ -381,31 +386,199 @@ void freeNode(Node *node)
     free(node);
 }
 
-int add_item(Node *head, Item *item_to_add)
+int add_item(Node **head)
 {
-    printf("Inside Add.\n");
-    if (NULL == item_to_add)
+    char *category;
+    char *name;
+    char tmp_buff[BUFF_SIZE];
+    float price = 0.0;
+    int c;
+    int quantity = 0;
+    Item item_to_add;
+    size_t len = 0;
+
+    // Clear buffer
+    while ((c = getchar()) != '\n' && c != EOF)
     {
-        printf("Recieved Null item pointer.\n");
     }
-    int end = getLastNode(head);
-    item_to_add->id = end + 1;
+
+    int end = getLastNode(*head);
+    item_to_add.id = end + 1;
+
+    // Get Item name
+    printf("Please enter the name of the item:\n");
+
+    if (NULL == fgets(tmp_buff, BUFF_SIZE, stdin))
+    {
+        printf("Error reading name.\n");
+        return ERROR;
+    }
+    // Null Terminate buffer
+    tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
+    len = strnlen(tmp_buff, BUFF_SIZE - 1);
+
+    // Malloc struct based on buffer size
+    name = malloc(len + 1);
+
+    // null terminate string
+    name[strlen(tmp_buff) + 1] = '\0';
+
+    // copy data
+    memcpy(name, tmp_buff, len);
+    name[len] = '\0';
+
+    // validate input
+    if (1 != validate_name_or_category(name))
+    {
+        printf("Name {%s} failed parse check.\n", name);
+        return ERROR;
+    }
+
+    // copy it to struct
+    item_to_add.name = name;
+
+    // Get Category
+    printf("Please enter the category for {%s}.\n", name);
+
+    if (NULL == fgets(tmp_buff, BUFF_SIZE, stdin))
+    {
+        printf("Error reading category.\n");
+        return ERROR;
+    }
+    // Null Terminate buffer
+    tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
+    len = strnlen(tmp_buff, BUFF_SIZE - 1);
+
+    // Malloc struct based on buffer size
+    category = malloc(len + 1);
+
+    // null terminate string
+    category[strlen(tmp_buff) + 1] = '\0';
+
+    // copy data
+    memcpy(category, tmp_buff, len);
+    category[len] = '\0';
+
+    if (1 != validate_name_or_category(category))
+    {
+        printf("Category {%s} failed parse check.\n", category);
+    }
+
+    item_to_add.category = category;
+
+    // Get Quantity
+    printf("Please enter the quantity for {%s}.\n", name);
+    quantity = parse_num_choice();
+    {
+        item_to_add.quantity = quantity;
+    }
+
+    printf("Please enter the price for {%s}.\n", name);
+    price = parse_float();
+    {
+        item_to_add.price = price;
+    }
+
+    insertAtEnd(head, item_to_add);
     return 0;
 }
 
 // TODO
-int update_item(Node *head, Item *item_to_update)
+int update_item(Node *head, int id)
 {
-    printf("Inside Update.\n");
-    if (NULL == item_to_update)
+    char tmp_buff[BUFF_SIZE];
+    Node *current = head;
+
+    while (current != NULL)
     {
-        printf("Recieved Null item pointer.\n");
+        int quantity = 0;
+        float price = 0.0;
+
+        if (current->item_data.id == id)
+        {
+            // Clear buffer
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF)
+            {
+            }
+
+            char *name;
+            char *category;
+
+            // Get Item name
+            printf("Please enter the name of the item:\n");
+
+            if (NULL == fgets(tmp_buff, BUFF_SIZE, stdin))
+            {
+                printf("Error reading name.\n");
+                return ERROR;
+            }
+            // Null Terminate buffer
+            tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
+            size_t len = strnlen(tmp_buff, BUFF_SIZE - 1);
+
+            // Malloc struct based on buffer size
+            name = malloc(len + 1);
+
+            // null terminate string
+            name[strlen(tmp_buff) + 1] = '\0';
+
+            // copy data
+            memcpy(name, tmp_buff, len);
+            name[len] = '\0';
+
+            // validate input
+            if (1 != validate_name_or_category(name))
+            {
+                printf("Name {%s} failed parse check.\n", name);
+                return ERROR;
+            }
+
+            // copy it to struct
+            current->item_data.name = name;
+
+            // Get Category
+            printf("Please enter the category for {%s}.\n", name);
+
+            if (NULL == fgets(tmp_buff, BUFF_SIZE, stdin))
+            {
+                printf("Error reading category.\n");
+                return -ERROR;
+            }
+            tmp_buff[strcspn(tmp_buff, "\n")] = '\0';
+
+            category = malloc(strnlen(tmp_buff, BUFF_SIZE - 1));
+            category[strlen(tmp_buff) + 1] = '\0';
+
+            strcpy(category, tmp_buff);
+            if (1 != validate_name_or_category(category))
+            {
+                printf("Category {%s} failed parse check.\n", category);
+            }
+
+            current->item_data.category = category;
+
+            // Get Quantity
+            printf("Please enter the quantity for {%s}.\n", name);
+            quantity = parse_num_choice();
+            {
+                current->item_data.quantity = quantity;
+            }
+
+            printf("Please enter the price for {%s}.\n", name);
+            price = parse_float();
+            {
+                current->item_data.price = price;
+            }
+            return 0;
+        }
+        current = current->next;
     }
 
-    return 0;
+    printf("Id not found\n");
+    return ERROR;
 }
 
-// TODO
 int remove_item(Node *head, Item *item_to_add)
 {
     int selection;
@@ -425,6 +598,9 @@ int remove_item(Node *head, Item *item_to_add)
     return 0;
 }
 
+/// @brief Parse string confirming only letters nums and spaces
+/// @param str string to analyze
+/// @return 1 on match -1 on fail
 int validate_name_or_category(char *str)
 {
     regex_t regex;
@@ -434,13 +610,20 @@ int validate_name_or_category(char *str)
     if (regcomp(&regex, pattern, REG_EXTENDED))
     {
         printf("Could not compile regex\n");
-        return 0;
+        return ERROR;
     }
 
     ret = regexec(&regex, str, 0, NULL, 0);
     regfree(&regex);
 
-    return (ret == 0); // 0 means match
+    if (ret == 0)
+    {
+        return 1; // match → valid
+    }
+    else
+    {
+        return ERROR; // no match → invalid
+    }
 }
 
 int search_item(Node *head, int id)
@@ -463,7 +646,7 @@ int search_item(Node *head, int id)
     }
 
     printf("Id not found\n");
-    return -1;
+    return ERROR;
 }
 
 int parse_num_choice()
@@ -479,47 +662,20 @@ int parse_num_choice()
     }
     return selection;
 }
-/*
-update item(Node *head, int id)
+
+int parse_float()
 {
-regex check for valid quantity/price/name
-search through LL for id and edit node->item->price
+    float selection;
+    if (1 != scanf("%f", &selection))
+    {
+        printf("Invalid selection. Must be numerical (float)\n");
+        // clear buffer so no infinity loop
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ; // On a new line because its technically after an empty curly brace
+        return 0.0f;
+    }
+    // selection = ((int)(selection * 100 + 0.5f)) / 100.0f;
+
+    return selection;
 }
-
-int add_item(Node *head, Item *item_to_add)
-{
-    printf("Inside add item func\n");
-    //     // NULL Check for head? Head can be null in blank list right?
-    //     if (NULL == item_to_add)
-    //     {
-    //         printf("Recieved Null item pointer.\n");
-    //     }
-
-    // int end = getLastNode(head);
-    // item_to_add->id = end + 1;
-
-    return 0;
-
-    //     int input;
-    //     while (1)
-    //     {
-    //         printf("Please input the ID # of the item you wish to add: ");
-    //         if (scanf("%d", &input) == 1)
-    //         {
-    //             item_to_add->id = input;
-    //             break;
-    //         }
-    //         else
-    //         {
-    //             printf("Invalid input. Must be a number.\n");
-    //             // Clear Buffer
-    //             int c;
-
-    //             while ((c = getchar()) != '\n' && c != EOF)
-    //                 ;
-    //         }
-    //     }
-}
-
-}
-*/
