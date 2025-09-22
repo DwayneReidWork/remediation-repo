@@ -101,7 +101,7 @@ int load_data(mock_struct *ms_ptr)
 
     printf("Loaded File Contents\nName: %s\nGame Over Status: %s\n", ms_ptr->name, ms_ptr->game_over ? "true" : "false");
 
-    // print board
+    printf("Board\n");
     for (int i = 0; i < ROW_SIZE; i++)
     {
         for (int j = 0; j < COL_SIZE; j++)
