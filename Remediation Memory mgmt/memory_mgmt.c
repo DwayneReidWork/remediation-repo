@@ -32,26 +32,27 @@ char *read_string(FILE *fp);
 int add_item(Node **head);
 int exit_cleanup(Item *item_ptr);
 int load(Node **head);
-int parse_float();
 int parse_num_choice();
-int prompt_user_selection(bool keep_looping, Node *head, Item *item_ptr);
+int prompt_user_selection(bool keep_looping, Node *head);
 int remove_item(Node *head, Item *item_to_add);
 int save(Node *head);
 int search_item(Node *head, int id);
 int update_item(Node *head, int id);
 int validate_name_or_category(char *str);
+float parse_float();
 
 // Node Funcs
 int getLastNode(Node *head);
 Node *createNode(Item data);
-void insertAtEnd(Node **head, Item data);
 void deleteAtPosition(Node **head, int position);
 void freeNode(Node *temp);
+void insertAtEnd(Node **head, Item data);
 void printListForward(Node *head);
 
 int main(int argc, char *argv[])
 {
     Item *item_ptr = malloc(sizeof(Item));
+
     if (NULL == item_ptr)
     {
         printf("Malloc failed\n");
@@ -64,10 +65,11 @@ int main(int argc, char *argv[])
 
     // in loop prompt user for input to add/search/update/delete/list
     // on exit of loop save file
+
     bool keepLooping = true;
     while (keepLooping)
     {
-        keepLooping = prompt_user_selection(keepLooping, head, item_ptr);
+        keepLooping = prompt_user_selection(keepLooping, head);
     }
     // // dummy data
     // item_ptr->id = 1;
@@ -87,7 +89,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int prompt_user_selection(bool keepLooping, Node *head, Item *item_ptr)
+int prompt_user_selection(bool keepLooping, Node *head)
 {
     int selection;
     printf("Please make a selection(1-6): \n1. Add Item\n2. Search for item\n3. Update Item\n4. delete Item\n5. List items\n6. Exit\n");
@@ -346,11 +348,18 @@ void deleteAtPosition(Node **head, int position)
 
 void printListForward(Node *head)
 {
+    if (NULL == head)
+    {
+        printf("List empty.\n");
+        return;
+    }
+
     Node *temp = head;
+
     printf("\nForward List:\n");
     while (temp != NULL)
     {
-        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: %.2f\n\n", temp->item_data.id,
+        printf("ID: %d\nName: %s\nCategory: %s\nQuantity: %d\nPrice: $%.2f\n\n", temp->item_data.id,
                temp->item_data.name,
                temp->item_data.category,
                temp->item_data.quantity,
@@ -362,7 +371,7 @@ void printListForward(Node *head)
 
 int getLastNode(Node *head)
 {
-    if (head == NULL)
+    if (NULL == head)
     {
         return 0;
     }
@@ -483,9 +492,14 @@ int add_item(Node **head)
     return 0;
 }
 
-// TODO
 int update_item(Node *head, int id)
 {
+    if (NULL == head || 0 == id)
+    {
+        printf("Invalid head ptr or ID recv'd.\n");
+        return ERROR;
+    }
+
     char tmp_buff[BUFF_SIZE];
     Node *current = head;
 
@@ -603,6 +617,12 @@ int remove_item(Node *head, Item *item_to_add)
 /// @return 1 on match -1 on fail
 int validate_name_or_category(char *str)
 {
+    if (NULL == str)
+    {
+        printf("String is null.\n");
+        return ERROR;
+    }
+
     regex_t regex;
     const char *pattern = "^[A-Za-z0-9 ]+$";
     int ret;
@@ -628,6 +648,12 @@ int validate_name_or_category(char *str)
 
 int search_item(Node *head, int id)
 {
+    if (NULL == head || 0 == id)
+    {
+        printf("Invalid head ptr or ID recv'd.\n");
+        return ERROR;
+    }
+
     Node *current = head;
 
     while (current != NULL)
@@ -663,7 +689,7 @@ int parse_num_choice()
     return selection;
 }
 
-int parse_float()
+float parse_float()
 {
     float selection;
     if (1 != scanf("%f", &selection))
@@ -675,7 +701,6 @@ int parse_float()
             ; // On a new line because its technically after an empty curly brace
         return 0.0f;
     }
-    // selection = ((int)(selection * 100 + 0.5f)) / 100.0f;
 
     return selection;
 }
