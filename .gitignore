@@ -2,7 +2,7 @@
 __pycache__
 .vscode
 .venv
-.txt
+*.txt
 
 #Save files
 *.gamesave
@@ -12,3 +12,4 @@ save_file
 project_2
 remediation_project
 loops
+memory_mgmt
