@@ -7,6 +7,7 @@ __pycache__
 *.gamesave
 
 #Binaries
+loops
 save_file
 project_2
 remediation_project
