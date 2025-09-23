@@ -16,7 +16,7 @@ When complete press ctrl+d to get a count of total lines entered
 
 int custom_getline(char s[], int limit);
 int custom_readlines(char *lineptr[], int max_lines);
-int custom_readlines_updated(char *lineptr[], int max_lines);
+int custom_readlines_updated(char lines[][MAXLEN], int max_lines);
 void write_lines(char *lineptr[], int nlines);
 
 char *lineptr[MAXLINES];
@@ -24,10 +24,11 @@ char *lineptr[MAXLINES];
 int main()
 {
     int nlines = custom_readlines(lineptr, MAXLINES);
+
     if (nlines < 0)
     {
         printf("Error: too many lines or out of memory.\n");
-        return 1;
+        return -1;
     }
 
     printf("\nRead %d lines:\n", nlines);
@@ -46,8 +47,10 @@ int main()
 
 int custom_readlines(char *lineptr[], int max_lines)
 {
+    // Data stores in an array of ptrs
     int len;
     int nlines = 0;
+
     char *p, line[MAXLEN];
 
     while ((len = custom_getline(line, MAXLEN)) > 0)
@@ -75,9 +78,29 @@ void write_lines(char *lineptr[], int nlines)
     }
 }
 
-int custom_readlines_updated(char *lineptr[], int max_lines)
+int custom_readlines_updated(char lines[][MAXLEN], int max_lines)
 {
-    return 0;
+    // Stored in 2d Array instead of malloc.
+    // Runs faster
+    // Limited by MAXLEN which also may waste sspace [unused]
+    int len;
+    int nlines = 0;
+
+    while ((len = custom_getline(lines[nlines], MAXLEN)) > 0)
+    {
+        if (nlines >= max_lines)
+        {
+            return -1;
+        }
+
+        // Remove newlines
+        if (lines[nlines][len - 1] == '\n')
+            lines[nlines][len - 1] = '\0';
+
+        nlines++;
+    }
+
+    return nlines;
 }
 
 /// @brief Waits for user to enter a char from cmd line  and press enter
@@ -99,9 +122,3 @@ int custom_getline(char s[], int limit)
     s[i] = '\0';
     return i;
 }
-
-/*
-112 5-8
-
-189 8-6
-*/
