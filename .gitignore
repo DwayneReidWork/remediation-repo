@@ -1,16 +1,19 @@
 #Defaults
-__pycache__
+*.txt
 .vscode
 .venv
-*.txt
+__pycache__
 
 #Save files
 *.gamesave
 
 #Binaries
-save_file
-project_2
-remediation_project
+custom_readlines
+custom_strncpy_strnlen_strend
+get_float
 loops
 memory_mgmt
-get_float
+project_2
+ptrs_and_arrays
+remediation_project
+save_file
