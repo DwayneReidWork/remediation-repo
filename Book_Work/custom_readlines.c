@@ -47,7 +47,7 @@ int main()
 
 int custom_readlines(char *lineptr[], int max_lines)
 {
-    // Data stores in an array of ptrs
+    // Data stored in an array of ptrs
     int len;
     int nlines = 0;
 
