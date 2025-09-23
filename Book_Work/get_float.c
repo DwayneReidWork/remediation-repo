@@ -1,5 +1,5 @@
 /*
-Page 97, exercise 5-1 (it looks like you basically did 5-2)
+Pg 97 #5-1 (it looks like you basically did 5-2)
 */
 
 #include <ctype.h>

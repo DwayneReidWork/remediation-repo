@@ -1,5 +1,5 @@
 /*
-107 exercise 4 & 5
+Pg 107 #4 & #5
 */
 
 #include <stdio.h>

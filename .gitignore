@@ -13,6 +13,7 @@ custom_strncpy_strnlen_strend
 get_float
 loops
 memory_mgmt
+md_array_error_checking
 project_2
 ptrs_and_arrays
 remediation_project
