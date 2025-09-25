@@ -43,26 +43,32 @@ def user_options(choice):
     printData('data.csv')
 
 def importCSV(filename, pk='pid', delimiter=','):
-    with open(filename, 'r') as file:
-        dataframe={}
-        # Read the header line, split by delimiter
-        headers = file.readline().replace("\n", '').split(delimiter)
-        for line in file:
-            # Parse each individual line
-            linedata = line.replace("\n", '').split(delimiter)
-            row = {}
-            
-            # Sync row data to header category
-            for i in range(len(headers)):
-                if i in range(len(linedata)):
-                    row[headers[i]] = linedata[i]
-                else:
-                    # If theres a category but no matching data in the row insert 'null'
-                    row[headers[i]] = "null"  
-            # insert into data frame  
-            dataframe[row[pk]] = [row]
-        file.close()
-        return dataframe
+    try:
+        with open(filename, 'r') as file:
+            dataframe={}
+            # Read the header line, split by delimiter
+            headers = file.readline().replace("\n", '').split(delimiter)
+            for line in file:
+                # Parse each individual line
+                linedata = line.replace("\n", '').split(delimiter)
+                row = {}
+                
+                # Sync row data to header category
+                for i in range(len(headers)):
+                    if i in range(len(linedata)):
+                        row[headers[i]] = linedata[i]
+                    else:
+                        # If theres a category but no matching data in the row insert 'null'
+                        row[headers[i]] = "null"  
+                # insert into data frame  
+                dataframe[row[pk]] = [row]
+            file.close()
+    except FileNotFoundError:
+        print(f"{filename}: was not found.")
+        return None
+
+    return dataframe
+
 
 def printData(filename):
     data = importCSV(filename)
