@@ -3,11 +3,12 @@ __pycache__
 .vscode
 .venv
 *.txt
-
+*.csv
 #Save files
 *.gamesave
 
 #Binaries
+csv_parser
 save_file
 project_2
 remediation_project
