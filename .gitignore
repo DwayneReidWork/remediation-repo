@@ -1,6 +1,6 @@
 #Defaults
 __pycache__
-.csv
+*.csv
 .vscode
 .venv
 *.txt
