@@ -61,7 +61,7 @@ def importCSV(filename, pk='pid', delimiter=','):
                         # If theres a category but no matching data in the row insert 'null'
                         row[headers[i]] = "null"  
                 # insert into data frame  
-                dataframe[row[pk]] = [row]
+                dataframe[row[pk]] = row
             file.close()
     except FileNotFoundError:
         print(f"{filename}: was not found.")
@@ -80,13 +80,16 @@ def printData(filename):
 
     # Takes first row gets all the keys and converts
     # To list to use as headers
-    headers = list(next(iter(data.values()))[0].keys())
+    headers = list(next(iter(data.values())).keys())
 
     table.append(headers)
 
     for x in data:
         rows = []
-        for values in data[x][0].values():
+        #data is the entire dict
+        #x is the line {with Pkey} [Dict entry]
+        #0 is to get the row as just a list
+        for values in data[x].values():
             # Build each row
             rows.append(values)
         # Add row to table
@@ -101,7 +104,7 @@ def addRow(data, filename):
         return
 
     # Get headers from first row
-    headers = list(next(iter(data.values()))[0].keys())
+    headers = list(next(iter(data.values())).keys())
     new_row = {}
     lines_count = len(data)
     new_pid = str(lines_count+1)
@@ -136,7 +139,7 @@ def search(data, pid):
         return
      
     if pid in data:
-        row = data[pid][0]  # grab the dictionary for that pid
+        row = data[pid]  # grab the dictionary for that pid
         row_str = ", ".join(f"{key}: {value}" for key, value in row.items())
         print(f"Found pid {pid}:\n{row_str}")
     else:
@@ -151,8 +154,8 @@ def update(data, pid):
         print(f"Pid [{pid}] is outdide the data range")
         return
 
-    headers = list(next(iter(data.values()))[0].keys())
-    row = data[pid][0]
+    headers = list(next(iter(data.values())).keys())
+    row = data[pid]
 
     print(f"Updating pid [{pid}]. Press Enter to keep current values.\n")
     for h in headers:
@@ -164,14 +167,13 @@ def update(data, pid):
         new_value = input(f"{h} [{current_value}]: ").strip()
         if new_value:
             row[h] = new_value
-    data[pid] = [row]
+    data[pid] = row
 
     # Re-write full CSV with all data (including updates)
     headers_line = ",".join(headers)
     rows_list = []
-    for key, rows in data.items():
-        for r in rows:
-            rows_list.append(",".join(str(r[h]) for h in headers))
+    for key, row in data.items():
+        rows_list.append(",".join(str(row[h]) for h in headers))
 
     with open("data.csv", "w") as f:
         f.write(headers_line + "\n")
@@ -187,7 +189,7 @@ def delete(data, pid):
         return
 
     # Get headers
-    headers = list(next(iter(data.values()))[0].keys())
+    headers = list(next(iter(data.values())).keys())
 
     new_list = []
     for key, rows in data.items():
