@@ -15,9 +15,13 @@ save_file
 project_2
 remediation_project
 loops
+main
 memory_mgmt
 md_array_error_checking
 project_2
 ptrs_and_arrays
 remediation_project
 save_file
+
+#misc
+riot.exe
