@@ -5,6 +5,7 @@ __pycache__
 .venv
 *.txt
 *.csv
+
 #Save files
 *.gamesave
 
