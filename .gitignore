@@ -1,17 +1,19 @@
 #Defaults
-*.txt
+__pycache__
+*.csv
 .vscode
 .venv
-__pycache__
+*.txt
+*.csv
 
 #Save files
 *.gamesave
 
 #Binaries
-custom_calloc
-custom_readlines
-custom_strncpy_strnlen_strend
-get_float
+csv_parser
+save_file
+project_2
+remediation_project
 loops
 memory_mgmt
 md_array_error_checking
