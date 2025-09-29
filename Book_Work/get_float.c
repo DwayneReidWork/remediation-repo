@@ -1,13 +1,5 @@
 /*
-Page 97, exercise 5-1 (it looks like you basically did 5-2)
-
-107 exercise 4 & 5
-
-110 - 5-7. Ignore the "how much faster" bit unless you want to do that.
-
-112 5-8
-
-189 8-6
+Pg 97 #5-1 (it looks like you basically did 5-2)
 */
 
 #include <ctype.h>
@@ -58,7 +50,7 @@ float getFloat(float *pn)
         int next = getch();
         if (!isdigit(next) && next != '.')
         {
-            // not a number after +/-, push both back and return 0
+            // not a number after +/-, push both back
             ungetch(next);
             ungetch(c);
             return 0;
@@ -70,7 +62,7 @@ float getFloat(float *pn)
     for (*pn = 0; isdigit(c); c = getch())
         *pn = 10.0 * *pn + (c - '0');
 
-    // fractional part
+    // fractional part (for float stuff)
     if (c == '.')
     {
         c = getch();
@@ -89,11 +81,13 @@ float getFloat(float *pn)
     return c;
 }
 
+// Get single char from buffer
 int getch(void)
 {
     return (bufp > 0) ? buf[--bufp] : getchar();
 }
 
+// Push char back into buffer
 void ungetch(int c)
 {
     if (bufp >= BUFSIZE)
