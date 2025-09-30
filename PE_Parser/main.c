@@ -19,14 +19,17 @@ int main(int argc, char *argv[])
         return ERROR;
     }
 
+    // Debuggint
     printf("Argv1 recvd: %s\n", argv[1]);
+
+    // Read the bytes of the executable
     FILE *file = fopen(argv[1], "rb");
     if (NULL == file)
     {
         printf("Failed to open file\n");
         return ERROR;
     }
-
+    // FIRST STRUCT
     IMAGE_DOS_HEADER *dos_header = malloc(sizeof(IMAGE_DOS_HEADER));
     if (NULL == dos_header)
     {
@@ -35,26 +38,24 @@ int main(int argc, char *argv[])
     }
 
     fread(dos_header, sizeof(IMAGE_DOS_HEADER), 1, file);
-    printf("Magic #: %d\n", dos_header->e_magic);
-    printf("Hexadecimal: 0x%X\n", dos_header->e_magic);
+    printf("Magic #: 0x%X\n", dos_header->e_magic);
 
+    // Second struct with ptrs to third and 4th
     IMAGE_NT_HEADERS64 *file_header = malloc(sizeof(IMAGE_NT_HEADERS64));
-    if (NULL == file)
+    if (NULL == file_header)
     {
         printf("Malloc failed.\n");
         return ERROR;
     }
+    // Find next position based on e_lfanew (offset) from beginning of file
+    fseek(file, dos_header->e_lfanew, SEEK_SET);
+    // Read from then on
+    fread(file_header, sizeof(IMAGE_NT_HEADERS64), 1, file);
 
-    fread(file_header, sizeof(IMAGE_FILE_HEADER), 1, file);
-    printf("Signature: %ld\n", file_header->Signature);
-    printf("Hexadecimal: 0x%lX\n", file_header->Signature);
-}
-
-void machine_type_converter(IMAGE_DOS_HEADER dos_header)
-{
-
-    // Example: Converting Machine type (WORD) from little-endian to host endian
-    WORD machine = dos_header.e_magic;
-    machine = ntohs(machine); // Convert from network byte order (big-endian) to host byte order
-    printf("Machine Type: 0x%x\n", machine);
+    printf("Hex Signature: 0x%X\n", file_header->Signature);
+    printf("Machine Type: 0x%X\n", file_header->FileHeader.Machine);
+    printf("Num of Sections: %d\n", file_header->FileHeader.NumberOfSections);
+    printf("Section Alignment: %d\n", file_header->OptionalHeader.FileAlignment);
+    printf("Image Size: %d\n", file_header->OptionalHeader.SizeOfImage);
+    return 0;
 }

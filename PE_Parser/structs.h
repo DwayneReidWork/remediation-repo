@@ -1,8 +1,8 @@
 #include <stdint.h>
 
-typedef unsigned short WORD;
-typedef unsigned long DWORD;
-typedef long LONG;
+typedef uint16_t WORD;
+typedef uint32_t DWORD;
+typedef uint32_t LONG;
 typedef unsigned char BYTE;
 typedef uint64_t ULONGLONG;
 
