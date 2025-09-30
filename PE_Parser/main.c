@@ -1,12 +1,15 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "structs.h"
 #define ERROR -1
 
 int main(int argc, char *argv[])
 {
+    int status = 0;
+
     printf("argc = %d\n", argc);
     for (int i = 0; i < argc; i++)
     {
@@ -26,15 +29,17 @@ int main(int argc, char *argv[])
     FILE *file = fopen(argv[1], "rb");
     if (NULL == file)
     {
-        printf("Failed to open file\n");
-        return ERROR;
+        status = errno;
+        perror("Failed to open file");
+        goto Cleanup;
     }
     // FIRST STRUCT
     IMAGE_DOS_HEADER *dos_header = malloc(sizeof(IMAGE_DOS_HEADER));
     if (NULL == dos_header)
     {
-        printf("Malloc failed.\n");
-        return ERROR;
+        status = errno;
+        perror("Malloc failed.");
+        goto Cleanup;
     }
 
     fread(dos_header, sizeof(IMAGE_DOS_HEADER), 1, file);
@@ -57,5 +62,19 @@ int main(int argc, char *argv[])
     printf("Num of Sections: %d\n", file_header->FileHeader.NumberOfSections);
     printf("Section Alignment: %d\n", file_header->OptionalHeader.FileAlignment);
     printf("Image Size: %d\n", file_header->OptionalHeader.SizeOfImage);
-    return 0;
+
+Cleanup:
+    if (file != NULL)
+    {
+        fclose(file);
+    }
+    if (file_header != NULL)
+    {
+        free(file_header);
+    }
+    if (dos_header != NULL)
+    {
+        free(dos_header);
+    }
+    return status;
 }
