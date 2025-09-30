@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     }
 
     fread(dos_header, sizeof(IMAGE_DOS_HEADER), 1, file);
-    printf("Magic #: 0x%X\n", dos_header->e_magic);
+    printf("Magic #: 0x%X\n", ntohs(dos_header->e_magic));
 
     // Second struct with ptrs to third and 4th
     IMAGE_NT_HEADERS64 *file_header = malloc(sizeof(IMAGE_NT_HEADERS64));
