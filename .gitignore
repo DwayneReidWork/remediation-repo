@@ -1,19 +1,17 @@
 #Defaults
 __pycache__
+.pytest_cache
+*.txt
 *.csv
 .vscode
 .venv
-*.txt
-*.csv
 
 #Save files
 *.gamesave
 
 #Binaries
+basic
 csv_parser
-save_file
-project_2
-remediation_project
 loops
 main
 memory_mgmt

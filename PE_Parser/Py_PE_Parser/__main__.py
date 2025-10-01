@@ -35,12 +35,15 @@ def parsefile(filename):
             if pe_signature != b'PE\x00\x00':
                 raise ValueError(f"Invalid PE signature: {pe_signature}")  
 
+            # Unpack struct set first to fields to variables drain rest
             machine_type, num_sections, *_ = struct.unpack(FILE_HEADER, f.read(struct.calcsize(FILE_HEADER)))
             print(f"Machine Type: 0x{machine_type:X}")
             print(f"Number of Sections: {num_sections}")
 
+            #Unpack struct to variable since the fields we want are deep in there
             optional_fields = struct.unpack(OPTIONAL_HEADER, f.read(struct.calcsize(OPTIONAL_HEADER)))
 
+            #Access fields by index
             print(f"Alignment: {optional_fields[10]}")
             print(f"Image_size: {optional_fields[18]}")
     except FileNotFoundError:
