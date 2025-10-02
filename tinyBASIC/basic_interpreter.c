@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +19,7 @@ int main(int argc, char *argv[])
         if (contents)
         {
             node_t *program_lines = parse_lines_to_nodes(contents);
-            parse_node_for_cmds(program_lines);
+            parse_node_word_by_word(program_lines);
             free(program_lines);
         }
         free(contents);
@@ -85,26 +86,55 @@ node_t *parse_lines_to_nodes(char *file_contents)
     return head;
 }
 
-node_t *parse_node_for_cmds(node_t *head)
+node_t *parse_node_word_by_word(node_t *head)
 {
     node_t *curr = head;
+    TOKEN current_token;
     char *token;
+    current_token.type = TOKEN_UNKNOWN;
+
+    const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
+
     while (curr->next != NULL)
     {
-        printf("Current Id: %d\n", curr->line_num);
-        token = strtok(curr->line, " ");
-        printf("Line number: %s\n", token);
-
-        token = strtok(NULL, " ");
-        printf("Command: %s\n", token);
-
-        // get rest of the line including spaces
-        token = strtok(NULL, "");
-        printf("Argument: %s\n", token);
+        tokenize_line(curr->line);
         curr = curr->next;
     }
+
     // Figure out proper return
     return head;
+}
+
+int act_on_cmd(TokenType cmd, char *data)
+{
+    switch (cmd)
+    {
+    case TOKEN_PRINT:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_LET:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_GO_TO:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_IF:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_GOSUB:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_RETURN:
+        printf("Recieved token: %d\n", cmd);
+        break;
+    case TOKEN_UNKNOWN:
+        break;
+    default:
+        printf("Hit default case\n");
+        break;
+    }
+
+    return 0;
 }
 
 node_t *create_new_node(int line_num, char *line)
@@ -147,4 +177,93 @@ void free_list(node_t *head)
         free(temp->line);
         free(temp);
     }
+}
+
+void tokenize_line(char *line)
+{
+    char *ptr = line;
+
+    while (*ptr != '\0')
+    {
+        // Skip whitespace
+        while (*ptr == ' ' || *ptr == '\t')
+            ptr++;
+
+        if (*ptr == '\0')
+            break;
+
+        if (isalpha(*ptr)) // Keyword or var name
+        {
+            char word[64];
+            int i = 0;
+
+            while (isalnum(*ptr) && i < 63)
+            {
+                word[i++] = *ptr;
+                ptr++;
+            }
+            word[i] = '\0';
+
+            // Check if word is keyword
+            if (strcmp(word, "LET") == 0)
+            {
+                printf("TOKEN_KEYWORD(LET)\n");
+            }
+            else if (strcmp(word, "PRINT") == 0)
+            {
+                printf("TOKEN_KEYWORD(PRINT)\n");
+            }
+            else
+            {
+                printf("TOKEN_VARNAME(%s)\n", word);
+            }
+        }
+        else if (isdigit(*ptr))
+        {
+            char number[32];
+            int i = 0;
+
+            while (isdigit(*ptr) && i < 31)
+            {
+                number[i++] = *ptr;
+                ptr++;
+            }
+            number[i] = '\0';
+
+            printf("TOKEN_NUMBER(%s)\n", number);
+        }
+        else if (*ptr == '=')
+        {
+            printf("TOKEN_EQUALS\n");
+            ptr++;
+        }
+        else if (*ptr == '+')
+        {
+            printf("TOKEN_ARITHMETIC(+)\n");
+            ptr++;
+        }
+        else if (*ptr == '-')
+        {
+            printf("TOKEN_ARITHMETIC(-)\n");
+            ptr++;
+        }
+        else if (*ptr == '*')
+        {
+            printf("TOKEN_ARITHMETIC(*)\n");
+            ptr++;
+        }
+        else if (*ptr == '/')
+        {
+            printf("TOKEN_ARITHMETIC(/)\n");
+            ptr++;
+        }
+        else
+        {
+            // Unknown char
+            printf("TOKEN_UNKNOWN(%c)\n", *ptr);
+            ptr++;
+        }
+    }
+
+    printf("TOKEN_EOL\n");
 }
