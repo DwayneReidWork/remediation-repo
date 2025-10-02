@@ -1,16 +1,14 @@
 #define ERROR -1
+// #define MAX_VAR_NAME 64
 
 typedef enum
 {
-    TOKEN_PRINT = 1,
-    TOKEN_LET,
-    TOKEN_GO_TO,
-    TOKEN_IF,
-    TOKEN_GOSUB,
-    TOKEN_RETURN,
+    TOKEN_KEYWORD = 1,
     TOKEN_VARNAME,
-    TOKEN_EQUALS,
+    TOKEN_PUNCTUATION,
     TOKEN_INT,
+    TOKEN_ARITHMETIC,
+    TOKEN_EQUALS,
     TOKEN_EOL,
     TOKEN_UNKNOWN,
 } TokenType;
@@ -43,6 +41,7 @@ typedef struct node
 } node_t;
 
 char *load_file_contents(char *filename);
+const char *get_token_type_name(TokenType type);
 int analyze_word(char *string);
 node_t *create_new_node(int line_num, char *line);
 node_t *parse_lines_to_nodes(char *file_contents);

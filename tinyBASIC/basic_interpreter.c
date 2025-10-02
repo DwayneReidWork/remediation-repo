@@ -90,7 +90,7 @@ node_t *parse_node_word_by_word(node_t *head)
 {
     node_t *curr = head;
 
-    while (curr->next != NULL)
+    while (curr != NULL)
     {
         tokenize_line(curr->line);
         curr = curr->next;
@@ -102,7 +102,7 @@ node_t *parse_node_word_by_word(node_t *head)
 
 int analyze_word(char *word)
 {
-    printf("Word Recieved {%s}\n", word);
+    // printf("Word Recieved {%s}\n", word);
 
     const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
 
@@ -110,17 +110,34 @@ int analyze_word(char *word)
     const char *punctuation[] = {",", "\"", ";"};
 
     int i, keyword_size, math_syms_size, punctuation_size;
+    TOKEN curr_token;
+
+    int len_word = strlen(word);
 
     keyword_size = sizeof(reservedKeyWords) / sizeof(reservedKeyWords[0]);
     math_syms_size = sizeof(math_syms) / sizeof(math_syms[0]);
     punctuation_size = sizeof(punctuation) / sizeof(punctuation[0]);
 
+    for (i = 0; i < len_word; i++)
+    {
+        if (!isdigit(word[i]))
+        {
+            break;
+        }
+        curr_token.type = TOKEN_INT;
+        curr_token.value.intValue = atoi(word);
+        printf("%s(%d)\n", get_token_type_name(curr_token.type), curr_token.value.intValue);
+        break;
+    }
+
     for (i = 0; i < punctuation_size; i++)
     {
         if (strcmp(word, punctuation[i]) == 0)
         {
-            printf("PUNCTUATION (%s)\n", punctuation[i]);
-            // Set TokenType here by struct?
+            curr_token.type = TOKEN_PUNCTUATION;
+            curr_token.value.varName = word[0];
+            printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
+
             break;
         }
     }
@@ -129,9 +146,20 @@ int analyze_word(char *word)
     {
         if (strcmp(word, math_syms[i]) == 0)
         {
-            printf("ARITHMETIC (%s)\n", math_syms[i]);
-            // Set TokenType here by struct?
-            break;
+            if (strcmp(word, "=") == 0)
+            {
+                curr_token.type = TOKEN_EQUALS;
+                curr_token.value.varName = word[0];
+                printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
+                break;
+            }
+            else
+            {
+                curr_token.type = TOKEN_ARITHMETIC;
+                curr_token.value.varName = word[0];
+                printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
+                break;
+            }
         }
     }
 
@@ -139,43 +167,37 @@ int analyze_word(char *word)
     {
         if (strcmp(word, reservedKeyWords[i]) == 0)
         {
-            printf("KEYWORD (%s)\n", reservedKeyWords[i]);
-            // Set TokenType here by struct?
+            curr_token.type = TOKEN_KEYWORD;
+            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
             break;
         }
     }
-
-    // printf("Haven't gotten that far for this symbol yet {%s}\n", word);
-
-    // WILL THIS BE REUSED ELSEWHERE? TBD
-    //  switch (cmd)
-    //  {
-    //  case TOKEN_PRINT:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_LET:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_GO_TO:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_IF:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_GOSUB:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_RETURN:
-    //      printf("Recieved token: %d\n", cmd);
-    //      break;
-    //  case TOKEN_UNKNOWN:
-    //      break;
-    //  default:
-    //      printf("Hit default case\n");
-    //      break;
-    //  }
-
     return 0;
+}
+
+const char *get_token_type_name(TokenType type)
+{
+    switch (type)
+    {
+    case TOKEN_KEYWORD:
+        return "TOKEN_KEYWORD";
+    case TOKEN_VARNAME:
+        return "TOKEN_VARNAME";
+    case TOKEN_PUNCTUATION:
+        return "TOKEN_PUNCTUATION";
+    case TOKEN_INT:
+        return "TOKEN_INT";
+    case TOKEN_ARITHMETIC:
+        return "TOKEN_ARITHMETIC";
+    case TOKEN_EQUALS:
+        return "TOKEN_EQUALS";
+    case TOKEN_EOL:
+        return "TOKEN_EOL";
+    case TOKEN_UNKNOWN:
+        return "TOKEN_UNKNOWN";
+    default:
+        return "UNKNOWN_TYPE";
+    }
 }
 
 node_t *create_new_node(int line_num, char *line)
@@ -385,3 +407,30 @@ void tokenize_line(char *line)
 
 //     printf("TOKEN_EOL\n");
 // }
+
+// WILL THIS BE REUSED ELSEWHERE? TBD
+//  switch (cmd)
+//  {
+//  case TOKEN_PRINT:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_LET:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_GO_TO:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_IF:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_GOSUB:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_RETURN:
+//      printf("Recieved token: %d\n", cmd);
+//      break;
+//  case TOKEN_UNKNOWN:
+//      break;
+//  default:
+//      printf("Hit default case\n");
+//      break;
