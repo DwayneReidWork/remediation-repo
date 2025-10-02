@@ -10,11 +10,7 @@ typedef enum
     TOKEN_RETURN,
     TOKEN_VARNAME,
     TOKEN_EQUALS,
-    TOKEN_NUMBER,
-    TOKEN_ARITHMETIC_PLUS,
-    TOKEN_ARITHMETIC_MINUS,
-    TOKEN_ARITHMETIC_MULTIPLY,
-    TOKEN_ARITHMETIC_DIVIDE,
+    TOKEN_INT,
     TOKEN_EOL,
     TOKEN_UNKNOWN,
 } TokenType;
@@ -47,10 +43,9 @@ typedef struct node
 } node_t;
 
 char *load_file_contents(char *filename);
-int act_on_cmd(TokenType cmd, char *data);
+int analyze_word(char *string);
 node_t *create_new_node(int line_num, char *line);
 node_t *parse_lines_to_nodes(char *file_contents);
-// node_t *parse_node_for_cmds(node_t *head);
 node_t *parse_node_word_by_word(node_t *head);
 void free_list(node_t *head);
 void insertAtEnd(node_t **head, node_t *new_node);

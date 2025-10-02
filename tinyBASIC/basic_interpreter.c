@@ -89,11 +89,6 @@ node_t *parse_lines_to_nodes(char *file_contents)
 node_t *parse_node_word_by_word(node_t *head)
 {
     node_t *curr = head;
-    TOKEN current_token;
-    char *token;
-    current_token.type = TOKEN_UNKNOWN;
-
-    const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
 
     while (curr->next != NULL)
     {
@@ -105,34 +100,80 @@ node_t *parse_node_word_by_word(node_t *head)
     return head;
 }
 
-int act_on_cmd(TokenType cmd, char *data)
+int analyze_word(char *word)
 {
-    switch (cmd)
+    printf("Word Recieved {%s}\n", word);
+
+    const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
+
+    const char *math_syms[] = {"+", "-", "*", "/", "="};
+    const char *punctuation[] = {",", "\"", ";"};
+
+    int i, keyword_size, math_syms_size, punctuation_size;
+
+    keyword_size = sizeof(reservedKeyWords) / sizeof(reservedKeyWords[0]);
+    math_syms_size = sizeof(math_syms) / sizeof(math_syms[0]);
+    punctuation_size = sizeof(punctuation) / sizeof(punctuation[0]);
+
+    for (i = 0; i < punctuation_size; i++)
     {
-    case TOKEN_PRINT:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_LET:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_GO_TO:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_IF:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_GOSUB:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_RETURN:
-        printf("Recieved token: %d\n", cmd);
-        break;
-    case TOKEN_UNKNOWN:
-        break;
-    default:
-        printf("Hit default case\n");
-        break;
+        if (strcmp(word, punctuation[i]) == 0)
+        {
+            printf("PUNCTUATION (%s)\n", punctuation[i]);
+            // Set TokenType here by struct?
+            break;
+        }
     }
+
+    for (i = 0; i < math_syms_size; i++)
+    {
+        if (strcmp(word, math_syms[i]) == 0)
+        {
+            printf("ARITHMETIC (%s)\n", math_syms[i]);
+            // Set TokenType here by struct?
+            break;
+        }
+    }
+
+    for (i = 0; i < keyword_size; i++)
+    {
+        if (strcmp(word, reservedKeyWords[i]) == 0)
+        {
+            printf("KEYWORD (%s)\n", reservedKeyWords[i]);
+            // Set TokenType here by struct?
+            break;
+        }
+    }
+
+    // printf("Haven't gotten that far for this symbol yet {%s}\n", word);
+
+    // WILL THIS BE REUSED ELSEWHERE? TBD
+    //  switch (cmd)
+    //  {
+    //  case TOKEN_PRINT:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_LET:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_GO_TO:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_IF:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_GOSUB:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_RETURN:
+    //      printf("Recieved token: %d\n", cmd);
+    //      break;
+    //  case TOKEN_UNKNOWN:
+    //      break;
+    //  default:
+    //      printf("Hit default case\n");
+    //      break;
+    //  }
 
     return 0;
 }
@@ -181,89 +222,166 @@ void free_list(node_t *head)
 
 void tokenize_line(char *line)
 {
-    char *ptr = line;
+    char *word = NULL;
 
-    while (*ptr != '\0')
+    while (*line != '\0')
     {
-        // Skip whitespace
-        while (*ptr == ' ' || *ptr == '\t')
-            ptr++;
+        while (*line == ' ')
+        {
+            line++;
+        }
 
-        if (*ptr == '\0')
+        if (*line == '\0')
+        {
             break;
+        }
 
-        if (isalpha(*ptr)) // Keyword or var name
+        if (ispunct(*line))
         {
-            char word[64];
-            int i = 0;
-
-            while (isalnum(*ptr) && i < 63)
+            // Char + null term
+            word = malloc(sizeof(char) * 2);
+            if (word == NULL)
             {
-                word[i++] = *ptr;
-                ptr++;
+                printf("Memory allocation failed\n");
+                return;
             }
-            word[i] = '\0';
-
-            // Check if word is keyword
-            if (strcmp(word, "LET") == 0)
-            {
-                printf("TOKEN_KEYWORD(LET)\n");
-            }
-            else if (strcmp(word, "PRINT") == 0)
-            {
-                printf("TOKEN_KEYWORD(PRINT)\n");
-            }
-            else
-            {
-                printf("TOKEN_VARNAME(%s)\n", word);
-            }
-        }
-        else if (isdigit(*ptr))
-        {
-            char number[32];
-            int i = 0;
-
-            while (isdigit(*ptr) && i < 31)
-            {
-                number[i++] = *ptr;
-                ptr++;
-            }
-            number[i] = '\0';
-
-            printf("TOKEN_NUMBER(%s)\n", number);
-        }
-        else if (*ptr == '=')
-        {
-            printf("TOKEN_EQUALS\n");
-            ptr++;
-        }
-        else if (*ptr == '+')
-        {
-            printf("TOKEN_ARITHMETIC(+)\n");
-            ptr++;
-        }
-        else if (*ptr == '-')
-        {
-            printf("TOKEN_ARITHMETIC(-)\n");
-            ptr++;
-        }
-        else if (*ptr == '*')
-        {
-            printf("TOKEN_ARITHMETIC(*)\n");
-            ptr++;
-        }
-        else if (*ptr == '/')
-        {
-            printf("TOKEN_ARITHMETIC(/)\n");
-            ptr++;
+            word[0] = *line;
+            word[1] = '\0';
+            analyze_word(word);
+            line++;
         }
         else
         {
-            // Unknown char
-            printf("TOKEN_UNKNOWN(%c)\n", *ptr);
-            ptr++;
+            char *start = line;
+            while (*line != ' ' && *line != '\0')
+            {
+                line++;
+            }
+
+            size_t len = line - start;
+            word = malloc(len + 1);
+            if (word == NULL)
+            {
+                printf("Memory allocation failed\n");
+                return;
+            }
+
+            strncpy(word, start, len);
+            word[len] = '\0';
+
+            analyze_word(word);
+
+            free(word);
         }
     }
-
-    printf("TOKEN_EOL\n");
 }
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+// void tokenize_line(char *line)
+// {
+//     char *ptr = line;
+
+//     while (*ptr != '\0')
+//     {
+//         // Skip whitespace
+//         while (*ptr == ' ' || *ptr == '\t')
+//             ptr++;
+
+//         if (*ptr == '\0')
+//             break;
+
+//         if (isalpha(*ptr)) // Keyword or var name
+//         {
+//             char word[64];
+//             int i = 0;
+
+//             while (isalnum(*ptr) && i < 63)
+//             {
+//                 word[i++] = *ptr;
+//                 ptr++;
+//             }
+//             word[i] = '\0';
+
+//             // Check if word is keyword
+//             if (strcmp(word, "LET") == 0)
+//             {
+//                 printf("TOKEN_KEYWORD(LET)\n");
+//             }
+//             else if (strcmp(word, "PRINT") == 0)
+//             {
+//                 printf("TOKEN_KEYWORD(PRINT)\n");
+//             }
+//             else
+//             {
+//                 printf("TOKEN_VARNAME(%s)\n", word);
+//             }
+//         }
+//         else if (isdigit(*ptr))
+//         {
+//             char number[32];
+//             int i = 0;
+
+//             while (isdigit(*ptr) && i < 31)
+//             {
+//                 number[i++] = *ptr;
+//                 ptr++;
+//             }
+//             number[i] = '\0';
+
+//             printf("TOKEN_NUMBER(%s)\n", number);
+//         }
+//         else if (*ptr == '=')
+//         {
+//             printf("TOKEN_EQUALS\n");
+//             ptr++;
+//         }
+//         else if (*ptr == '+')
+//         {
+//             printf("TOKEN_ARITHMETIC(+)\n");
+//             ptr++;
+//         }
+//         else if (*ptr == '-')
+//         {
+//             printf("TOKEN_ARITHMETIC(-)\n");
+//             ptr++;
+//         }
+//         else if (*ptr == '*')
+//         {
+//             printf("TOKEN_ARITHMETIC(*)\n");
+//             ptr++;
+//         }
+//         else if (*ptr == '/')
+//         {
+//             printf("TOKEN_ARITHMETIC(/)\n");
+//             ptr++;
+//         }
+//         else
+//         {
+//             // Unknown char
+//             printf("TOKEN_UNKNOWN(%c)\n", *ptr);
+//             ptr++;
+//         }
+//     }
+
+//     printf("TOKEN_EOL\n");
+// }
