@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,75 +103,43 @@ node_t *parse_node_word_by_word(node_t *head)
 
 int analyze_word(char *word)
 {
-    // printf("Word Recieved {%s}\n", word);
-
-    const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
-
-    const char *math_syms[] = {"+", "-", "*", "/", "="};
-    const char *punctuation[] = {",", "\"", ";"};
-
-    int i, keyword_size, math_syms_size, punctuation_size;
     TOKEN curr_token;
 
-    int len_word = strlen(word);
-
-    keyword_size = sizeof(reservedKeyWords) / sizeof(reservedKeyWords[0]);
-    math_syms_size = sizeof(math_syms) / sizeof(math_syms[0]);
-    punctuation_size = sizeof(punctuation) / sizeof(punctuation[0]);
-
-    for (i = 0; i < len_word; i++)
+    // Find Numbers
+    if (is_all_digits(word))
     {
-        if (!isdigit(word[i]))
-        {
-            break;
-        }
         curr_token.type = TOKEN_INT;
         curr_token.value.intValue = atoi(word);
         printf("%s(%d)\n", get_token_type_name(curr_token.type), curr_token.value.intValue);
-        break;
     }
-
-    for (i = 0; i < punctuation_size; i++)
+    else if (is_punctuation(word))
     {
-        if (strcmp(word, punctuation[i]) == 0)
-        {
-            curr_token.type = TOKEN_PUNCTUATION;
-            curr_token.value.varName = word[0];
-            printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
-
-            break;
-        }
+        curr_token.type = TOKEN_PUNCTUATION;
+        curr_token.value.varName = word[0];
+        printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
     }
-
-    for (i = 0; i < math_syms_size; i++)
+    else if (is_math_symbol(word))
     {
-        if (strcmp(word, math_syms[i]) == 0)
+        if (strcmp(word, "=") == 0)
         {
-            if (strcmp(word, "=") == 0)
-            {
-                curr_token.type = TOKEN_EQUALS;
-                curr_token.value.varName = word[0];
-                printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
-                break;
-            }
-            else
-            {
-                curr_token.type = TOKEN_ARITHMETIC;
-                curr_token.value.varName = word[0];
-                printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
-                break;
-            }
+            curr_token.type = TOKEN_EQUALS;
         }
+        else
+        {
+            curr_token.type = TOKEN_ARITHMETIC;
+        }
+        curr_token.value.varName = word[0];
+        printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
     }
-
-    for (i = 0; i < keyword_size; i++)
+    else if (is_keyword(word))
     {
-        if (strcmp(word, reservedKeyWords[i]) == 0)
-        {
-            curr_token.type = TOKEN_KEYWORD;
-            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
-            break;
-        }
+        curr_token.type = TOKEN_KEYWORD;
+        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+    }
+    else
+    {
+        curr_token.type = TOKEN_VARNAME;
+        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
     }
     return 0;
 }
@@ -198,6 +167,54 @@ const char *get_token_type_name(TokenType type)
     default:
         return "UNKNOWN_TYPE";
     }
+}
+
+bool is_all_digits(char *word)
+{
+    for (int i = 0; word[i]; i++)
+    {
+        if (!isdigit(word[i]))
+            return false;
+    }
+    return true;
+}
+
+bool is_punctuation(char *word)
+{
+    const char *punctuation[] = {",", "\"", ";"};
+    size_t punctuation_size = sizeof(punctuation) / sizeof(punctuation[0]);
+    for (int i = 0; i < punctuation_size; i++)
+    {
+        if (strcmp(word, punctuation[i]) == 0)
+            return true;
+    }
+    return false;
+}
+
+bool is_math_symbol(char *word)
+{
+    const char *math_syms[] = {"+", "-", "*", "/", "="};
+    size_t math_syms_size = sizeof(math_syms) / sizeof(math_syms[0]);
+    for (int i = 0; i < math_syms_size; i++)
+    {
+        if (strcmp(word, math_syms[i]) == 0)
+            return true;
+    }
+    return false;
+}
+
+bool is_keyword(char *word)
+{
+    const char *reservedKeyWords[] = {"LET", "PRINT", "GO TO", "GOSUB", "RETURN", "INPUT"};
+
+    size_t keyword_size = sizeof(reservedKeyWords) / sizeof(reservedKeyWords[0]);
+
+    for (int i = 0; i < keyword_size; i++)
+    {
+        if (strcmp(word, reservedKeyWords[i]) == 0)
+            return true;
+    }
+    return false;
 }
 
 node_t *create_new_node(int line_num, char *line)

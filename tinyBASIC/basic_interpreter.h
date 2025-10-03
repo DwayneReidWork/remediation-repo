@@ -40,6 +40,10 @@ typedef struct node
     struct node *prev;
 } node_t;
 
+bool is_all_digits(char *word);
+bool is_punctuation(char *word);
+bool is_math_symbol(char *word);
+bool is_keyword(char *word);
 char *load_file_contents(char *filename);
 const char *get_token_type_name(TokenType type);
 int analyze_word(char *string);
