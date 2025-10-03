@@ -1,8 +1,10 @@
 #Defaults
 __pycache__
+
 .pytest_cache
-*.txt
+*.bas
 *.csv
+*.txt
 .vscode
 .venv
 
