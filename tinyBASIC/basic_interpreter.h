@@ -37,6 +37,7 @@ typedef enum
 typedef struct _TOKEN
 {
     TokenType type;
+    int line_num;
     union
     {
         char varName;
@@ -83,7 +84,7 @@ bool is_punctuation(char *word);
 char *load_file_contents(char *filename);
 const char *get_token_operation_name(OperationType type);
 const char *get_token_type_name(TokenType type);
-int analyze_word(char *string);
+int analyze_word(char *string, int line_num);
 int interpret_and_do_line(int keyword_num, char *line);
 int get_Keyword_Enum(char *word);
 node_t *create_new_node(int line_num, char *line);
@@ -92,4 +93,4 @@ node_t *parse_node_word_by_word(node_t *head);
 TOKEN key_word_check(char *word);
 void free_list(node_t *head);
 void insertAtEnd(node_t **head, node_t *new_node);
-void tokenize_line(char *line);
+void tokenize_line(node_t *node);

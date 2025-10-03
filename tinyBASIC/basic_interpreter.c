@@ -93,7 +93,7 @@ node_t *parse_node_word_by_word(node_t *head)
 
     while (curr != NULL)
     {
-        tokenize_line(curr->line);
+        tokenize_line(curr);
         curr = curr->next;
     }
 
@@ -101,7 +101,7 @@ node_t *parse_node_word_by_word(node_t *head)
     return head;
 }
 
-int analyze_word(char *word)
+int analyze_word(char *word, int line_num)
 {
     TOKEN curr_token = key_word_check(word);
     if (curr_token.type == TOKEN_KEYWORD)
@@ -318,8 +318,10 @@ void free_list(node_t *head)
     }
 }
 
-void tokenize_line(char *line)
+void tokenize_line(node_t *node)
 {
+    char *line = node->line;
+    int line_num = node->line_num;
     char *word = NULL;
 
     while (*line != '\0')
@@ -346,7 +348,7 @@ void tokenize_line(char *line)
             word[0] = *line;
             word[1] = '\0';
 
-            analyze_word(word);
+            analyze_word(word, line_num);
             line++;
         }
         else
@@ -368,7 +370,7 @@ void tokenize_line(char *line)
             strncpy(word, start, len);
             word[len] = '\0';
 
-            analyze_word(word);
+            analyze_word(word, line_num);
 
             free(word);
         }
