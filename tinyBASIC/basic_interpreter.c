@@ -114,7 +114,18 @@ int analyze_word(char *word)
     }
     else if (is_punctuation(word))
     {
-        curr_token.type = TOKEN_PUNCTUATION;
+        if (strcmp(word, "\"") == 0)
+        {
+            curr_token.type = TOKEN_QUOTATION;
+        }
+        else if (strcmp(word, ";") == 0)
+        {
+            curr_token.type = TOKEN_EOL;
+        }
+        else
+        {
+            curr_token.type = TOKEN_PUNCTUATION;
+        }
         curr_token.value.varName = word[0];
         printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
     }
@@ -146,27 +157,9 @@ int analyze_word(char *word)
 
 const char *get_token_type_name(TokenType type)
 {
-    switch (type)
-    {
-    case TOKEN_KEYWORD:
-        return "TOKEN_KEYWORD";
-    case TOKEN_VARNAME:
-        return "TOKEN_VARNAME";
-    case TOKEN_PUNCTUATION:
-        return "TOKEN_PUNCTUATION";
-    case TOKEN_INT:
-        return "TOKEN_INT";
-    case TOKEN_ARITHMETIC:
-        return "TOKEN_ARITHMETIC";
-    case TOKEN_EQUALS:
-        return "TOKEN_EQUALS";
-    case TOKEN_EOL:
-        return "TOKEN_EOL";
-    case TOKEN_UNKNOWN:
-        return "TOKEN_UNKNOWN";
-    default:
-        return "UNKNOWN_TYPE";
-    }
+    if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0]) && token_names[type])
+        return token_names[type];
+    return "UNKNOWN_TOKEN";
 }
 
 bool is_all_digits(char *word)
@@ -336,95 +329,6 @@ void tokenize_line(char *line)
 //
 //
 //
-// void tokenize_line(char *line)
-// {
-//     char *ptr = line;
-
-//     while (*ptr != '\0')
-//     {
-//         // Skip whitespace
-//         while (*ptr == ' ' || *ptr == '\t')
-//             ptr++;
-
-//         if (*ptr == '\0')
-//             break;
-
-//         if (isalpha(*ptr)) // Keyword or var name
-//         {
-//             char word[64];
-//             int i = 0;
-
-//             while (isalnum(*ptr) && i < 63)
-//             {
-//                 word[i++] = *ptr;
-//                 ptr++;
-//             }
-//             word[i] = '\0';
-
-//             // Check if word is keyword
-//             if (strcmp(word, "LET") == 0)
-//             {
-//                 printf("TOKEN_KEYWORD(LET)\n");
-//             }
-//             else if (strcmp(word, "PRINT") == 0)
-//             {
-//                 printf("TOKEN_KEYWORD(PRINT)\n");
-//             }
-//             else
-//             {
-//                 printf("TOKEN_VARNAME(%s)\n", word);
-//             }
-//         }
-//         else if (isdigit(*ptr))
-//         {
-//             char number[32];
-//             int i = 0;
-
-//             while (isdigit(*ptr) && i < 31)
-//             {
-//                 number[i++] = *ptr;
-//                 ptr++;
-//             }
-//             number[i] = '\0';
-
-//             printf("TOKEN_NUMBER(%s)\n", number);
-//         }
-//         else if (*ptr == '=')
-//         {
-//             printf("TOKEN_EQUALS\n");
-//             ptr++;
-//         }
-//         else if (*ptr == '+')
-//         {
-//             printf("TOKEN_ARITHMETIC(+)\n");
-//             ptr++;
-//         }
-//         else if (*ptr == '-')
-//         {
-//             printf("TOKEN_ARITHMETIC(-)\n");
-//             ptr++;
-//         }
-//         else if (*ptr == '*')
-//         {
-//             printf("TOKEN_ARITHMETIC(*)\n");
-//             ptr++;
-//         }
-//         else if (*ptr == '/')
-//         {
-//             printf("TOKEN_ARITHMETIC(/)\n");
-//             ptr++;
-//         }
-//         else
-//         {
-//             // Unknown char
-//             printf("TOKEN_UNKNOWN(%c)\n", *ptr);
-//             ptr++;
-//         }
-//     }
-
-//     printf("TOKEN_EOL\n");
-// }
-
 // WILL THIS BE REUSED ELSEWHERE? TBD
 //  switch (cmd)
 //  {

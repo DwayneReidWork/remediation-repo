@@ -10,7 +10,7 @@ __pycache__
 *.gamesave
 
 #Binaries
-basic
+basic_interpreter
 csv_parser
 loops
 main

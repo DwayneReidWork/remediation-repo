@@ -6,6 +6,7 @@ typedef enum
     TOKEN_KEYWORD = 1,
     TOKEN_VARNAME,
     TOKEN_PUNCTUATION,
+    TOKEN_QUOTATION,
     TOKEN_INT,
     TOKEN_ARITHMETIC,
     TOKEN_EQUALS,
@@ -40,10 +41,24 @@ typedef struct node
     struct node *prev;
 } node_t;
 
+const char *token_names[] = {
+    "TOKEN_DUMMY", // FOr Enum starting at 1
+    "TOKEN_KEYWORD",
+    "TOKEN_VARNAME",
+    "TOKEN_PUNCTUATION",
+    "TOKEN_QUOTATION",
+    "TOKEN_INT",
+    "TOKEN_ARITHMETIC",
+    "TOKEN_EQUALS",
+    "TOKEN_EOL",
+    "TOKEN_UNKNOWN",
+    "UNKNOWN_TYPE",
+};
+
 bool is_all_digits(char *word);
-bool is_punctuation(char *word);
-bool is_math_symbol(char *word);
 bool is_keyword(char *word);
+bool is_math_symbol(char *word);
+bool is_punctuation(char *word);
 char *load_file_contents(char *filename);
 const char *get_token_type_name(TokenType type);
 int analyze_word(char *string);
