@@ -1,5 +1,4 @@
 #define ERROR -1
-// #define MAX_VAR_NAME 64
 
 typedef enum
 {
@@ -16,10 +15,11 @@ typedef enum
 
 typedef enum
 {
-    TOKEN_ADDITION = 1,
+    TOKEN_ADDITION = 0,
     TOKEN_SUBTRACTION,
     TOKEN_MULTIPLICATION,
-    TOKEN_DIVISION
+    TOKEN_DIVISION,
+    TOKEN_OP_UNKNOWN,
 } OperationType;
 
 typedef struct _TOKEN
@@ -42,7 +42,7 @@ typedef struct node
 } node_t;
 
 const char *token_names[] = {
-    "TOKEN_DUMMY", // FOr Enum starting at 1
+    "TOKEN_DUMMY", // For Enum starting at 1
     "TOKEN_KEYWORD",
     "TOKEN_VARNAME",
     "TOKEN_PUNCTUATION",
@@ -55,11 +55,20 @@ const char *token_names[] = {
     "UNKNOWN_TYPE",
 };
 
+const char *operation_names[] = {
+    "TOKEN_ADDITION",
+    "TOKEN_SUBTRACTION",
+    "TOKEN_MULTIPLICATION",
+    "TOKEN_DIVISION",
+    "UNKNOWN_TYPE",
+};
+
 bool is_all_digits(char *word);
 bool is_keyword(char *word);
 bool is_math_symbol(char *word);
 bool is_punctuation(char *word);
 char *load_file_contents(char *filename);
+const char *get_token_operation_name(OperationType type);
 const char *get_token_type_name(TokenType type);
 int analyze_word(char *string);
 node_t *create_new_node(int line_num, char *line);

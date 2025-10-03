@@ -112,6 +112,8 @@ int analyze_word(char *word)
         curr_token.value.intValue = atoi(word);
         printf("%s(%d)\n", get_token_type_name(curr_token.type), curr_token.value.intValue);
     }
+
+    // Find Punctuation
     else if (is_punctuation(word))
     {
         if (strcmp(word, "\"") == 0)
@@ -129,24 +131,46 @@ int analyze_word(char *word)
         curr_token.value.varName = word[0];
         printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
     }
+
+    // Find Math Symbols
     else if (is_math_symbol(word))
     {
         if (strcmp(word, "=") == 0)
         {
             curr_token.type = TOKEN_EQUALS;
+            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+            return 0;
         }
-        else
+
+        curr_token.type = TOKEN_ARITHMETIC;
+
+        if (strcmp(word, "+") == 0)
         {
-            curr_token.type = TOKEN_ARITHMETIC;
+            curr_token.value.operation = TOKEN_ADDITION;
         }
-        curr_token.value.varName = word[0];
-        printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
+        else if (strcmp(word, "-") == 0)
+        {
+            curr_token.value.operation = TOKEN_SUBTRACTION;
+        }
+        else if (strcmp(word, "*") == 0)
+        {
+            curr_token.value.operation = TOKEN_MULTIPLICATION;
+        }
+        else if (strcmp(word, "/") == 0)
+        {
+            curr_token.value.operation = TOKEN_DIVISION;
+        }
+        printf("%s(%s)\n",
+               get_token_operation_name(curr_token.value.operation),
+               word);
     }
+    // Find Keywords
     else if (is_keyword(word))
     {
         curr_token.type = TOKEN_KEYWORD;
         printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
     }
+    // All other Strings
     else
     {
         curr_token.type = TOKEN_VARNAME;
@@ -159,6 +183,13 @@ const char *get_token_type_name(TokenType type)
 {
     if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0]) && token_names[type])
         return token_names[type];
+    return "UNKNOWN_TOKEN";
+}
+
+const char *get_token_operation_name(OperationType type)
+{
+    if (type >= 0 && type < sizeof(operation_names) / sizeof(operation_names[0]) && operation_names[type])
+        return operation_names[type];
     return "UNKNOWN_TOKEN";
 }
 
@@ -308,27 +339,6 @@ void tokenize_line(char *line)
     }
 }
 
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 // WILL THIS BE REUSED ELSEWHERE? TBD
 //  switch (cmd)
 //  {
