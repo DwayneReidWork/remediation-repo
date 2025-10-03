@@ -103,7 +103,12 @@ node_t *parse_node_word_by_word(node_t *head)
 
 int analyze_word(char *word)
 {
-    TOKEN curr_token;
+    TOKEN curr_token = key_word_check(word);
+    if (curr_token.type == TOKEN_KEYWORD)
+    {
+        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+        return 0;
+    }
 
     // Find Numbers
     if (is_all_digits(word))
@@ -164,17 +169,14 @@ int analyze_word(char *word)
                get_token_operation_name(curr_token.value.operation),
                word);
     }
-    // Find Keywords
-    else if (is_keyword(word))
-    {
-        curr_token.type = TOKEN_KEYWORD;
-        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
-    }
     // All other Strings
     else
     {
-        curr_token.type = TOKEN_VARNAME;
-        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+        if (!is_keyword(word))
+        {
+            curr_token.type = TOKEN_VARNAME;
+            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+        }
     }
     return 0;
 }
@@ -191,6 +193,39 @@ const char *get_token_operation_name(OperationType type)
     if (type >= 0 && type < sizeof(operation_names) / sizeof(operation_names[0]) && operation_names[type])
         return operation_names[type];
     return "UNKNOWN_TOKEN";
+}
+
+int get_Keyword_Enum(char *word)
+{
+    if (strcmp(word, "LET") == 0)
+        return KW_LET;
+    if (strcmp(word, "PRINT") == 0)
+        return KW_PRINT;
+    if (strcmp(word, "GO TO") == 0)
+        return KW_GO_TO;
+    if (strcmp(word, "GOSUB") == 0)
+        return KW_GOSUB;
+    if (strcmp(word, "RETURN") == 0)
+        return KW_RETURN;
+    if (strcmp(word, "INPUT") == 0)
+        return KW_INPUT;
+    return KW_UNKNOWN;
+}
+
+TOKEN key_word_check(char *word)
+{
+    TOKEN curr_token;
+    curr_token.type = TOKEN_UNKNOWN;
+
+    KeywordType kw = get_Keyword_Enum(word);
+
+    if (kw != KW_UNKNOWN)
+    {
+        curr_token.type = TOKEN_KEYWORD;
+        curr_token.value.keyword = kw;
+    }
+
+    return curr_token;
 }
 
 bool is_all_digits(char *word)
@@ -310,6 +345,7 @@ void tokenize_line(char *line)
             }
             word[0] = *line;
             word[1] = '\0';
+
             analyze_word(word);
             line++;
         }
@@ -339,29 +375,37 @@ void tokenize_line(char *line)
     }
 }
 
-// WILL THIS BE REUSED ELSEWHERE? TBD
-//  switch (cmd)
-//  {
-//  case TOKEN_PRINT:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_LET:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_GO_TO:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_IF:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_GOSUB:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_RETURN:
-//      printf("Recieved token: %d\n", cmd);
-//      break;
-//  case TOKEN_UNKNOWN:
-//      break;
-//  default:
-//      printf("Hit default case\n");
-//      break;
+int interpret_and_do_line(int keyword_num, char *line)
+{
+    // WILL THIS BE REUSED ELSEWHERE? TBD
+    switch (keyword_num)
+    {
+    case KW_LET:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_PRINT:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_GO_TO:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_IF:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_GOSUB:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_RETURN:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case KW_INPUT:
+        printf("Recieved token: %d\n", keyword_num);
+        break;
+    case TOKEN_UNKNOWN:
+        break;
+    default:
+        printf("Hit default case\n");
+        break;
+    }
+    return 0;
+}

@@ -22,6 +22,18 @@ typedef enum
     TOKEN_OP_UNKNOWN,
 } OperationType;
 
+typedef enum
+{
+    KW_UNKNOWN = 0,
+    KW_LET,
+    KW_PRINT,
+    KW_GO_TO,
+    KW_IF,
+    KW_GOSUB,
+    KW_RETURN,
+    KW_INPUT
+} KeywordType;
+
 typedef struct _TOKEN
 {
     TokenType type;
@@ -30,6 +42,7 @@ typedef struct _TOKEN
         char varName;
         int intValue;
         OperationType operation;
+        KeywordType keyword;
     } value;
 } TOKEN, *PTOKEN;
 
@@ -71,9 +84,12 @@ char *load_file_contents(char *filename);
 const char *get_token_operation_name(OperationType type);
 const char *get_token_type_name(TokenType type);
 int analyze_word(char *string);
+int interpret_and_do_line(int keyword_num, char *line);
+int get_Keyword_Enum(char *word);
 node_t *create_new_node(int line_num, char *line);
 node_t *parse_lines_to_nodes(char *file_contents);
 node_t *parse_node_word_by_word(node_t *head);
+TOKEN key_word_check(char *word);
 void free_list(node_t *head);
 void insertAtEnd(node_t **head, node_t *new_node);
 void tokenize_line(char *line);
