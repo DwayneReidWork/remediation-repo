@@ -103,10 +103,11 @@ node_t *parse_node_word_by_word(node_t *head)
 
 int analyze_word(char *word, int line_num)
 {
-    TOKEN curr_token = key_word_check(word);
+    TOKEN curr_token = key_word_check(word, line_num);
     if (curr_token.type == TOKEN_KEYWORD)
     {
         printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
+        interpret_and_do_line(curr_token.value.keyword, word);
         return 0;
     }
 
@@ -212,19 +213,17 @@ int get_Keyword_Enum(char *word)
     return KW_UNKNOWN;
 }
 
-TOKEN key_word_check(char *word)
+TOKEN key_word_check(char *word, int line_num)
 {
     TOKEN curr_token;
     curr_token.type = TOKEN_UNKNOWN;
+    curr_token.line_num = line_num;
 
-    KeywordType kw = get_Keyword_Enum(word);
-
-    if (kw != KW_UNKNOWN)
+    if (is_keyword(word))
     {
         curr_token.type = TOKEN_KEYWORD;
-        curr_token.value.keyword = kw;
+        curr_token.value.keyword = get_Keyword_Enum(word);
     }
-
     return curr_token;
 }
 

@@ -90,7 +90,7 @@ int get_Keyword_Enum(char *word);
 node_t *create_new_node(int line_num, char *line);
 node_t *parse_lines_to_nodes(char *file_contents);
 node_t *parse_node_word_by_word(node_t *head);
-TOKEN key_word_check(char *word);
+TOKEN key_word_check(char *word, int line_num);
 void free_list(node_t *head);
 void insertAtEnd(node_t **head, node_t *new_node);
 void tokenize_line(node_t *node);
