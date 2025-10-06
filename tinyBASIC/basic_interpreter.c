@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
         {
             node_t *program_lines = parse_lines_to_nodes(contents);
             parse_node_word_by_word(program_lines);
+            interpret_and_do_line(program_lines);
             free(program_lines);
         }
         free(contents);
@@ -90,126 +91,130 @@ node_t *parse_lines_to_nodes(char *file_contents)
 node_t *parse_node_word_by_word(node_t *head)
 {
     node_t *curr = head;
-
-    while (curr != NULL)
+    while (curr)
     {
         tokenize_line(curr);
         curr = curr->next;
     }
-
-    // Figure out proper return
     return head;
 }
 
-int analyze_word(char *word, int line_num)
+TOKEN analyze_word(char *word, int line_num)
 {
-    TOKEN curr_token = key_word_check(word, line_num);
-    if (curr_token.type == TOKEN_KEYWORD)
-    {
-        printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
-        interpret_and_do_line(curr_token.value.keyword, word);
-        return 0;
-    }
+    TOKEN tok;
+    tok.line_num = line_num;
+    tok.type = TOKEN_UNKNOWN;
 
-    // Find Numbers
-    if (is_all_digits(word))
+    if (is_keyword(word))
     {
-        curr_token.type = TOKEN_INT;
-        curr_token.value.intValue = atoi(word);
-        printf("%s(%d)\n", get_token_type_name(curr_token.type), curr_token.value.intValue);
+        tok.type = TOKEN_KEYWORD;
+        tok.value.keyword = get_Keyword_Enum(word);
     }
-
-    // Find Punctuation
+    else if (is_all_digits(word))
+    {
+        tok.type = TOKEN_INT;
+        tok.value.intValue = atoi(word);
+    }
     else if (is_punctuation(word))
     {
         if (strcmp(word, "\"") == 0)
         {
-            curr_token.type = TOKEN_QUOTATION;
+            tok.type = TOKEN_QUOTATION;
         }
         else if (strcmp(word, ";") == 0)
         {
-            curr_token.type = TOKEN_EOL;
+            tok.type = TOKEN_EOL;
+        }
+        else if (strcmp(word, ",") == 0)
+        {
+            tok.type = TOKEN_COMMA;
         }
         else
         {
-            curr_token.type = TOKEN_PUNCTUATION;
+            tok.type = TOKEN_PUNCTUATION;
         }
-        curr_token.value.varName = word[0];
-        printf("%s(%c)\n", get_token_type_name(curr_token.type), curr_token.value.varName);
+        tok.value.varName = word[0];
     }
-
-    // Find Math Symbols
     else if (is_math_symbol(word))
     {
         if (strcmp(word, "=") == 0)
         {
-            curr_token.type = TOKEN_EQUALS;
-            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
-            return 0;
+            tok.type = TOKEN_EQUALS;
         }
-
-        curr_token.type = TOKEN_ARITHMETIC;
-
-        if (strcmp(word, "+") == 0)
+        else
         {
-            curr_token.value.operation = TOKEN_ADDITION;
+            tok.type = TOKEN_ARITHMETIC;
+            if (strcmp(word, "+") == 0)
+            {
+                tok.value.operation = TOKEN_ADDITION;
+            }
+            else if (strcmp(word, "-") == 0)
+            {
+                tok.value.operation = TOKEN_SUBTRACTION;
+            }
+            else if (strcmp(word, "*") == 0)
+            {
+                tok.value.operation = TOKEN_MULTIPLICATION;
+            }
+            else if (strcmp(word, "/") == 0)
+            {
+                tok.value.operation = TOKEN_DIVISION;
+            }
         }
-        else if (strcmp(word, "-") == 0)
-        {
-            curr_token.value.operation = TOKEN_SUBTRACTION;
-        }
-        else if (strcmp(word, "*") == 0)
-        {
-            curr_token.value.operation = TOKEN_MULTIPLICATION;
-        }
-        else if (strcmp(word, "/") == 0)
-        {
-            curr_token.value.operation = TOKEN_DIVISION;
-        }
-        printf("%s(%s)\n",
-               get_token_operation_name(curr_token.value.operation),
-               word);
     }
-    // All other Strings
     else
     {
-        if (!is_keyword(word))
-        {
-            curr_token.type = TOKEN_VARNAME;
-            printf("%s(%s)\n", get_token_type_name(curr_token.type), word);
-        }
+        tok.type = TOKEN_VARNAME;
+        tok.value.varName = word[0];
     }
-    return 0;
+
+    return tok;
 }
 
 const char *get_token_type_name(TokenType type)
 {
     if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0]) && token_names[type])
+    {
         return token_names[type];
+    }
     return "UNKNOWN_TOKEN";
 }
 
 const char *get_token_operation_name(OperationType type)
 {
     if (type >= 0 && type < sizeof(operation_names) / sizeof(operation_names[0]) && operation_names[type])
+    {
         return operation_names[type];
+    }
     return "UNKNOWN_TOKEN";
 }
 
 int get_Keyword_Enum(char *word)
 {
     if (strcmp(word, "LET") == 0)
+    {
         return KW_LET;
+    }
     if (strcmp(word, "PRINT") == 0)
+    {
         return KW_PRINT;
+    }
     if (strcmp(word, "GO TO") == 0)
+    {
         return KW_GO_TO;
+    }
     if (strcmp(word, "GOSUB") == 0)
+    {
         return KW_GOSUB;
+    }
     if (strcmp(word, "RETURN") == 0)
+    {
         return KW_RETURN;
+    }
     if (strcmp(word, "INPUT") == 0)
+    {
         return KW_INPUT;
+    }
     return KW_UNKNOWN;
 }
 
@@ -280,7 +285,7 @@ node_t *create_new_node(int line_num, char *line)
     node_t *newNode = malloc(sizeof(node_t));
     newNode->line_num = line_num;
     newNode->line = line;
-
+    newNode->tokens = NULL;
     newNode->next = NULL;
     newNode->prev = NULL;
 
@@ -319,94 +324,170 @@ void free_list(node_t *head)
 
 void tokenize_line(node_t *node)
 {
-    char *line = node->line;
-    int line_num = node->line_num;
-    char *word = NULL;
+    if (!node || !node->line)
+        return;
 
-    while (*line != '\0')
+    char *line_copy = strdup(node->line); // duplicate so strtok doesn’t break original
+    if (!line_copy)
+        return;
+
+    // Skip first token (line number)
+    char *ptr = line_copy;
+    while (*ptr && !isspace(*ptr))
+        ptr++;
+    while (*ptr && isspace(*ptr))
+        ptr++;
+
+    char *token_str = strtok(ptr, " ");
+    while (token_str)
     {
-        while (*line == ' ')
+        TOKEN tok = analyze_word(token_str, node->line_num);
+        add_token_to_node(node, tok);
+        token_str = strtok(NULL, " ");
+    }
+
+    free(line_copy);
+}
+
+void add_token_to_node(node_t *node, TOKEN token_info)
+{
+    if (NULL == node)
+    {
+        printf("NULL Node in Add to token.\n");
+        return;
+    }
+    token_t *new_token = malloc(sizeof(token_t));
+    if (!new_token)
+    {
+        printf("Memory allocation failed\n");
+        return;
+    }
+
+    new_token->token = token_info;
+    new_token->next = NULL;
+
+    if (node->tokens == NULL)
+    {
+        node->tokens = new_token;
+    }
+    else
+    {
+        token_t *curr = node->tokens;
+        while (curr->next != NULL)
         {
-            line++;
+            curr = curr->next;
         }
-
-        if (*line == '\0')
-        {
-            break;
-        }
-
-        if (ispunct(*line))
-        {
-            // Char + null term
-            word = malloc(sizeof(char) * 2);
-            if (word == NULL)
-            {
-                printf("Memory allocation failed\n");
-                return;
-            }
-            word[0] = *line;
-            word[1] = '\0';
-
-            analyze_word(word, line_num);
-            line++;
-        }
-        else
-        {
-            char *start = line;
-            while (*line != ' ' && *line != '\0')
-            {
-                line++;
-            }
-
-            size_t len = line - start;
-            word = malloc(len + 1);
-            if (word == NULL)
-            {
-                printf("Memory allocation failed\n");
-                return;
-            }
-
-            strncpy(word, start, len);
-            word[len] = '\0';
-
-            analyze_word(word, line_num);
-
-            free(word);
-        }
+        curr->next = new_token;
     }
 }
 
-int interpret_and_do_line(int keyword_num, char *line)
+void interpret_and_do_line(node_t *head)
 {
-    // WILL THIS BE REUSED ELSEWHERE? TBD
-    switch (keyword_num)
+    node_t *curr = head;
+
+    if (NULL == head)
+    {
+        printf("NULL Head in interpret and do lines.\n");
+        return;
+    }
+    while (curr)
+    {
+        // printf("Line %d:\n", node->line_num);
+        token_t *t = curr->tokens;
+        while (t != NULL)
+        {
+            TOKEN tok = t->token;
+            switch (tok.type)
+            {
+            case TOKEN_KEYWORD:
+            {
+                printf("%s(%s)\n", get_token_type_name(tok.type), get_keyword_name(tok.type));
+                break;
+            }
+            case TOKEN_INT:
+            {
+                printf("%s(%d)\n", get_token_type_name(tok.type), tok.value.intValue);
+                break;
+            }
+            case TOKEN_VARNAME:
+            {
+                printf("%s(%c)\n", get_token_type_name(tok.type), tok.value.varName);
+                break;
+            }
+            case TOKEN_PUNCTUATION:
+            {
+                printf("%s(%c)\n", get_token_type_name(tok.type), tok.value.varName);
+                break;
+            }
+            case TOKEN_QUOTATION:
+            {
+                printf("%s\n", get_token_type_name(tok.type));
+                break;
+            }
+            case TOKEN_COMMA:
+            {
+                printf("%s\n", get_token_type_name(tok.type));
+                break;
+            }
+            case TOKEN_EOL:
+            {
+                printf("%s\n", get_token_type_name(tok.type));
+                break;
+            }
+            case TOKEN_ARITHMETIC:
+            {
+                const char *math_syms[] = {"+", "-", "*", "/", "="};
+                printf("%s(%s)\n", get_token_type_name(tok.type), math_syms[tok.value.operation]);
+                break;
+            }
+            case TOKEN_EQUALS:
+            {
+                printf("%s(=)\n", get_token_type_name(tok.type));
+                break;
+            }
+            default:
+            {
+                printf("%s\n", get_token_type_name(tok.type));
+                break;
+            }
+            }
+            t = t->next;
+        }
+        curr = curr->next;
+    }
+}
+
+const char *get_keyword_name(KeywordType kw)
+{
+    switch (kw)
     {
     case KW_LET:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_PRINT:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_GO_TO:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_IF:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_GOSUB:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_RETURN:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case KW_INPUT:
-        printf("Recieved token: %d\n", keyword_num);
-        break;
-    case TOKEN_UNKNOWN:
-        break;
-    default:
-        printf("Hit default case\n");
-        break;
+    {
+        return "LET";
     }
-    return 0;
+    case KW_PRINT:
+    {
+        return "PRINT";
+    }
+    case KW_GO_TO:
+    {
+        return "GO TO";
+    }
+    case KW_GOSUB:
+    {
+        return "GOSUB";
+    }
+    case KW_RETURN:
+    {
+        return "RETURN";
+    }
+    case KW_INPUT:
+    {
+        return "INPUT";
+    }
+    default:
+    {
+        return "UNKNOWN";
+    }
+    }
 }
