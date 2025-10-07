@@ -28,17 +28,13 @@ typedef enum
     KW_UNKNOWN = 0,
     KW_LET,
     KW_PRINT,
-    KW_GO_TO,
-    KW_IF,
-    KW_GOSUB,
-    KW_RETURN,
-    KW_INPUT
 } KeywordType;
 
 typedef struct _TOKEN
 {
     TokenType type;
     int line_num;
+    char *lexeme; // explain?
     union
     {
         char varName;

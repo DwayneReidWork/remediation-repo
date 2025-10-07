@@ -102,6 +102,7 @@ node_t *parse_node_word_by_word(node_t *head)
 TOKEN analyze_word(char *word, int line_num)
 {
     TOKEN tok;
+    tok.lexeme = strdup(word);
     tok.line_num = line_num;
     tok.type = TOKEN_UNKNOWN;
 
@@ -198,22 +199,6 @@ int get_Keyword_Enum(char *word)
     if (strcmp(word, "PRINT") == 0)
     {
         return KW_PRINT;
-    }
-    if (strcmp(word, "GO TO") == 0)
-    {
-        return KW_GO_TO;
-    }
-    if (strcmp(word, "GOSUB") == 0)
-    {
-        return KW_GOSUB;
-    }
-    if (strcmp(word, "RETURN") == 0)
-    {
-        return KW_RETURN;
-    }
-    if (strcmp(word, "INPUT") == 0)
-    {
-        return KW_INPUT;
     }
     return KW_UNKNOWN;
 }
@@ -392,7 +377,6 @@ void interpret_and_do_line(node_t *head)
     }
     while (curr)
     {
-        // printf("Line %d:\n", node->line_num);
         token_t *t = curr->tokens;
         while (t != NULL)
         {
@@ -402,6 +386,29 @@ void interpret_and_do_line(node_t *head)
             case TOKEN_KEYWORD:
             {
                 printf("%s(%s)\n", get_token_type_name(tok.type), get_keyword_name(tok.type));
+
+                // int switch_token = get_Keyword_Enum(curr->tokens->token.lexeme);
+                int switch_token = curr->tokens->token.value.keyword;
+                switch (switch_token)
+                {
+                case KW_LET:
+                    printf("Inside Sub Switch.\n");
+                    if (strcmp("LET", get_keyword_name(tok.type)) == 0)
+                    {
+                        while (t)
+                        {
+                            printf("%s ", t->token.lexeme);
+                            t = t->next;
+                        }
+                        printf("\n");
+                    }
+                    break;
+                case KW_PRINT:
+                    break;
+                default:
+                    printf("Hit default case in switch_token switch statement.\n");
+                    break;
+                }
                 break;
             }
             case TOKEN_INT:
@@ -436,8 +443,8 @@ void interpret_and_do_line(node_t *head)
             }
             case TOKEN_ARITHMETIC:
             {
-                const char *math_syms[] = {"+", "-", "*", "/", "="};
-                printf("%s(%s)\n", get_token_type_name(tok.type), math_syms[tok.value.operation]);
+                const char *math_syms[] = {"+", "-", "*", "/"};
+                printf("%s(%s)\n", get_token_operation_name(tok.value.operation), math_syms[tok.value.operation]);
                 break;
             }
             case TOKEN_EQUALS:
@@ -450,8 +457,8 @@ void interpret_and_do_line(node_t *head)
                 printf("%s\n", get_token_type_name(tok.type));
                 break;
             }
+                t = t->next;
             }
-            t = t->next;
         }
         curr = curr->next;
     }
@@ -468,22 +475,6 @@ const char *get_keyword_name(KeywordType kw)
     case KW_PRINT:
     {
         return "PRINT";
-    }
-    case KW_GO_TO:
-    {
-        return "GO TO";
-    }
-    case KW_GOSUB:
-    {
-        return "GOSUB";
-    }
-    case KW_RETURN:
-    {
-        return "RETURN";
-    }
-    case KW_INPUT:
-    {
-        return "INPUT";
     }
     default:
     {
