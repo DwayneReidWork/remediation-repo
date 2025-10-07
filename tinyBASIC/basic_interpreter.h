@@ -28,6 +28,7 @@ typedef enum
     KW_UNKNOWN = 0,
     KW_LET,
     KW_PRINT,
+    KW_EOF,
 } KeywordType;
 
 typedef struct _TOKEN
@@ -100,4 +101,19 @@ void add_token_to_node(node_t *node, TOKEN token_info);
 void free_list(node_t *head);
 void insertAtEnd(node_t **head, node_t *new_node);
 void interpret_and_do_line(node_t *node);
+void parse_let(token_t *stream);
+void parse_print(token_t *stream);
 void tokenize_line(node_t *node);
+
+typedef struct
+{
+    KeywordType keyword;
+    void (*parse_function)(token_t *);
+} KeywordHandler;
+
+// Struct of function pointers for the Keyword handler struct. Assigns function to Keyword.
+KeywordHandler keyword_handlers[] = {
+    {KW_LET, parse_let},
+    {KW_PRINT, parse_print},
+    {KW_EOF, NULL} // should never be called
+};

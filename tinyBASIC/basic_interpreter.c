@@ -385,29 +385,21 @@ void interpret_and_do_line(node_t *head)
             {
             case TOKEN_KEYWORD:
             {
+                // Print statement for Keyword
                 printf("%s(%s)\n", get_token_type_name(tok.type), get_keyword_name(tok.type));
 
-                // int switch_token = get_Keyword_Enum(curr->tokens->token.lexeme);
-                int switch_token = curr->tokens->token.value.keyword;
-                switch (switch_token)
+                // Handling for Sentence based on keyword
+                int i = 0;
+                while (keyword_handlers[i].keyword != KW_EOF)
                 {
-                case KW_LET:
-                    printf("Inside Sub Switch.\n");
-                    if (strcmp("LET", get_keyword_name(tok.type)) == 0)
+                    if (keyword_handlers[i].keyword == t->token.value.keyword)
                     {
-                        while (t)
-                        {
-                            printf("%s ", t->token.lexeme);
-                            t = t->next;
-                        }
-                        printf("\n");
+                        // Call the parsing function
+                        keyword_handlers[i].parse_function(curr->tokens);
+                        // Exit the inner loop after finding a match
+                        break;
                     }
-                    break;
-                case KW_PRINT:
-                    break;
-                default:
-                    printf("Hit default case in switch_token switch statement.\n");
-                    break;
+                    i++;
                 }
                 break;
             }
@@ -457,8 +449,8 @@ void interpret_and_do_line(node_t *head)
                 printf("%s\n", get_token_type_name(tok.type));
                 break;
             }
-                t = t->next;
             }
+            t = t->next;
         }
         curr = curr->next;
     }
@@ -481,4 +473,14 @@ const char *get_keyword_name(KeywordType kw)
         return "UNKNOWN";
     }
     }
+}
+
+void parse_let(token_t *stream)
+{
+    printf("Inside Parse Let\n");
+}
+
+void parse_print(token_t *stream)
+{
+    printf("Inside Parse Print\n");
 }
