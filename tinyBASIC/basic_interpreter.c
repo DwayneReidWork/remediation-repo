@@ -1,6 +1,6 @@
 #include <ctype.h>
-#include <stdbool.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,102 +8,227 @@
 
 int main(int argc, char *argv[])
 {
-    char *contents = NULL;
+    /*check arg count
+    if 1 open shell
+    if 2 open .bas file and parse
+    if 3 throw error + usage
+    */
 
-    if (argc > 2)
+    int status = SUCCESS;
+    if (argc == 1)
     {
-        printf("Usage: %s for interactive shell\n%s <.bas filename> to execute file.\n", argv[0], argv[0]);
+        // open shell
     }
     else if (argc == 2)
     {
-        contents = load_file_contents(argv[1]);
-        if (contents)
-        {
-            node_t *program_lines = parse_lines_to_nodes(contents);
-            parse_node_word_by_word(program_lines);
-            interpret_and_do_line(program_lines);
-            free(program_lines);
-        }
-        free(contents);
+        status = parse_file(argv[1]);
     }
-    else if (argc < 2)
+    else
     {
-        // Open live interactive shell.
-        printf("Open Shell.\n");
+        printf("Usage: %s to open shell.\n %s <filename.bas> to load and interpret file.\n", argv[0], argv[0]);
+        return ERROR;
     }
+    return status;
 }
 
-char *load_file_contents(char *filename)
+/// @brief Open file, load contents into LL,
+/// @param filename
+/// @return
+int parse_file(char *filename)
 {
-    if (filename == NULL)
+    int status = SUCCESS;
+    /*
+    Open file
+    get contents
+    split contents on new line
+    split line into tokens
+    store tokens somewhere
+    find keywords
+    evaluate line by keyword
+    */
+
+    // some pointer to a buffer for the file
+    // function to get file contents
+    char *buff = NULL;
+
+    long file_size = load_file(filename, &buff);
+    // error handling
+    if (-1 == file_size)
     {
-        printf("Invalid filename.\n");
-        return NULL;
+        return ERROR;
     }
 
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL)
+    // function to split file contents by line
+    // status = split_buff_to_lines(buff, lines, &line_count, file_size);
+    tokenize_file(buff, file_size);
+    // error handling
+
+    // for line in lines
+    // function to split line by words
+    // do_tokenize
+
+    //  function to interpret keywords from token
+    // function to validate sentence structure is valid
+    // function to evaluate valid line
+
+    return status;
+}
+
+long load_file(char *filename, char **buff)
+{
+    /*
+    Read File
+    populate buff w/file contents
+
+    return file_len*/
+
+    if (NULL == filename)
     {
         printf("Error opening file.\n");
+        return ERROR;
+    }
+    FILE *file_contents = fopen(filename, "r");
+    if (NULL == file_contents)
+    {
+        perror("Failed to open file.");
+        return ERROR;
+    }
+
+    fseek(file_contents, 0, SEEK_END);
+    long file_size = ftell(file_contents);
+    rewind(file_contents);
+
+    *buff = malloc(file_size + 1);
+    if (NULL == *buff)
+    {
+        perror("Malloc failed.");
+        return ERROR;
+    }
+    fread(*buff, file_size, file_size, file_contents);
+    fclose(file_contents);
+    return file_size;
+}
+
+PTOKEN tokenize_file(char *buff, long file_size)
+{
+    /*
+    given file tokenize word by word
+    seperated by spaces/'\n'
+    and new line chars
+    append token to struct of tokens
+    return struct
+    */
+
+    if (NULL == buff)
+    {
+        printf("Null buff recieved in tokenize file.\n");
         return NULL;
     }
 
-    fseek(fp, 0, SEEK_END);
-    long filesize = ftell(fp);
-    rewind(fp);
+    int tok_count = 1;
 
-    char *buffer = (char *)malloc(filesize + 1);
-    if (buffer == NULL)
+    for (int i = 0; i < file_size; i++)
     {
-        printf("Memory allocation failed.\n");
-        fclose(fp);
+        if (buff[i] == '\n' || buff[i] == ' ')
+        {
+            tok_count++;
+        }
+    }
+
+    printf("Tok Count: %d\n", tok_count);
+
+    TOKEN *tok_array = calloc(tok_count + 1, sizeof(TOKEN));
+    if (NULL == tok_array)
+    {
+        perror("Tok Array Calloc Failed");
         return NULL;
     }
 
-    fread(buffer, 1, filesize, fp);
-    buffer[filesize] = '\0';
+    char *temp = strdup(buff);
 
-    fclose(fp);
-    return buffer;
-}
-
-/// @brief split file into nodes by line
-/// @param file_contents ptr to loaded file contents
-/// @return pointer to head
-node_t *parse_lines_to_nodes(char *file_contents)
-{
-    node_t *head = NULL;
-    int line_num = 1;
-
-    // Split into lines by newline
-    char *line = strtok(file_contents, "\n");
-    while (line != NULL)
+    if (temp == NULL)
     {
-        node_t *new_node = create_new_node(line_num, line);
-        insertAtEnd(&head, new_node);
-        line = strtok(NULL, "\n");
-        line_num++;
+        perror("strdup failed");
+        free(tok_array);
+        return NULL;
+    }
+    int index = 0;
+    char *word = strtok(temp, " \n");
+    while (word != NULL && index < tok_count)
+    {
+        TOKEN tok = analyze_word(word);
+        tok.line_num = 0;
+        tok_array[index] = tok;
+
+        index++;
+        word = strtok(NULL, " \n");
     }
 
-    return head;
+    free(temp);
+
+    return tok_array;
 }
 
-node_t *parse_node_word_by_word(node_t *head)
-{
-    node_t *curr = head;
-    while (curr)
-    {
-        tokenize_line(curr);
-        curr = curr->next;
-    }
-    return head;
-}
+// int split_buff_to_lines(char *buff, char **lines, int *line_count, long file_size)
+// {
+//     /*
+//     taking buffer and splitting it on newline
+//     adding that to lines
+//     increment line count
+//     */
+//     // make sure this is not null first
+//     *line_count = 1; // no matter what assume one line.
+//     int iCurrentLineLen = 0;
+//     int currentLine = 0;
+//     char *left = buff;
+//     char *right = left;
 
-TOKEN analyze_word(char *word, int line_num)
+//     for (int i = 0; i < file_size; i++)
+//     {
+//         if (buff[i] == '\n')
+//         {
+//             (*line_count)++;
+//         }
+//     }
+
+//     lines = calloc(*line_count, sizeof(char *));
+//     // error check that
+//     if (NULL == lines)
+//     {
+//         perror("Lines Calloc Failed.");
+//         return ERROR;
+//     }
+
+//     while ('\0' != *left)
+//     {
+//         while (*right != '\n' && *right != '\0' && right < buff + file_size)
+//         {
+//             right++;
+//         }
+
+//         iCurrentLineLen = right - left + 1;
+//         // allocate indv line
+//         lines[currentLine] = calloc(iCurrentLineLen, sizeof(char));
+//         if (lines[currentLine] == NULL)
+//         {
+//             perror("*Lines Calloc Failed");
+//             return ERROR;
+//         }
+//         memcpy(lines[currentLine], left, iCurrentLineLen - 1);
+//         printf("Line: %s\n", lines[currentLine]);
+
+//         // move left pointer over to EOL
+//         right++;
+//         currentLine++;
+//         left = right;
+//     }
+//     return 0;
+// }
+
+TOKEN analyze_word(char *word)
 {
     TOKEN tok;
     tok.lexeme = strdup(word);
-    tok.line_num = line_num;
     tok.type = TOKEN_UNKNOWN;
 
     if (is_keyword(word))
@@ -172,51 +297,6 @@ TOKEN analyze_word(char *word, int line_num)
     return tok;
 }
 
-const char *get_token_type_name(TokenType type)
-{
-    if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0]) && token_names[type])
-    {
-        return token_names[type];
-    }
-    return "UNKNOWN_TOKEN";
-}
-
-const char *get_token_operation_name(OperationType type)
-{
-    if (type >= 0 && type < sizeof(operation_names) / sizeof(operation_names[0]) && operation_names[type])
-    {
-        return operation_names[type];
-    }
-    return "UNKNOWN_TOKEN";
-}
-
-int get_Keyword_Enum(char *word)
-{
-    if (strcmp(word, "LET") == 0)
-    {
-        return KW_LET;
-    }
-    if (strcmp(word, "PRINT") == 0)
-    {
-        return KW_PRINT;
-    }
-    return KW_UNKNOWN;
-}
-
-TOKEN key_word_check(char *word, int line_num)
-{
-    TOKEN curr_token;
-    curr_token.type = TOKEN_UNKNOWN;
-    curr_token.line_num = line_num;
-
-    if (is_keyword(word))
-    {
-        curr_token.type = TOKEN_KEYWORD;
-        curr_token.value.keyword = get_Keyword_Enum(word);
-    }
-    return curr_token;
-}
-
 bool is_all_digits(char *word)
 {
     for (int i = 0; word[i]; i++)
@@ -265,222 +345,15 @@ bool is_keyword(char *word)
     return false;
 }
 
-node_t *create_new_node(int line_num, char *line)
+int get_Keyword_Enum(char *word)
 {
-    node_t *newNode = malloc(sizeof(node_t));
-    newNode->line_num = line_num;
-    newNode->line = line;
-    newNode->tokens = NULL;
-    newNode->next = NULL;
-    newNode->prev = NULL;
-
-    return newNode;
-}
-
-void insertAtEnd(node_t **head, node_t *new_node)
-{
-    // check if DLL is empty
-    if (*head == NULL)
+    if (strcmp(word, "LET") == 0)
     {
-        *head = new_node;
-        return;
+        return KW_LET;
     }
-
-    node_t *temp = *head;
-    while (temp->next != NULL)
+    if (strcmp(word, "PRINT") == 0)
     {
-        temp = temp->next;
+        return KW_PRINT;
     }
-    temp->next = new_node;
-    new_node->prev = temp;
-}
-
-void free_list(node_t *head)
-{
-    node_t *temp;
-    while (head)
-    {
-        temp = head;
-        head = head->next;
-        free(temp->line);
-        free(temp);
-    }
-}
-
-void tokenize_line(node_t *node)
-{
-    if (!node || !node->line)
-        return;
-
-    char *line_copy = strdup(node->line); // duplicate so strtok doesn’t break original
-    if (!line_copy)
-        return;
-
-    // Skip first token (line number)
-    char *ptr = line_copy;
-    while (*ptr && !isspace(*ptr))
-        ptr++;
-    while (*ptr && isspace(*ptr))
-        ptr++;
-
-    char *token_str = strtok(ptr, " ");
-    while (token_str)
-    {
-        TOKEN tok = analyze_word(token_str, node->line_num);
-        add_token_to_node(node, tok);
-        token_str = strtok(NULL, " ");
-    }
-
-    free(line_copy);
-}
-
-void add_token_to_node(node_t *node, TOKEN token_info)
-{
-    if (NULL == node)
-    {
-        printf("NULL Node in Add to token.\n");
-        return;
-    }
-    token_t *new_token = malloc(sizeof(token_t));
-    if (!new_token)
-    {
-        printf("Memory allocation failed\n");
-        return;
-    }
-
-    new_token->token = token_info;
-    new_token->next = NULL;
-
-    if (node->tokens == NULL)
-    {
-        node->tokens = new_token;
-    }
-    else
-    {
-        token_t *curr = node->tokens;
-        while (curr->next != NULL)
-        {
-            curr = curr->next;
-        }
-        curr->next = new_token;
-    }
-}
-
-void interpret_and_do_line(node_t *head)
-{
-    node_t *curr = head;
-
-    if (NULL == head)
-    {
-        printf("NULL Head in interpret and do lines.\n");
-        return;
-    }
-    while (curr)
-    {
-        token_t *t = curr->tokens;
-        while (t != NULL)
-        {
-            TOKEN tok = t->token;
-            switch (tok.type)
-            {
-            case TOKEN_KEYWORD:
-            {
-                // Print statement for Keyword
-                printf("%s(%s)\n", get_token_type_name(tok.type), get_keyword_name(tok.type));
-
-                // Handling for Sentence based on keyword
-                int i = 0;
-                while (keyword_handlers[i].keyword != KW_EOF)
-                {
-                    if (keyword_handlers[i].keyword == t->token.value.keyword)
-                    {
-                        // Call the parsing function
-                        keyword_handlers[i].parse_function(curr->tokens);
-                        // Exit the inner loop after finding a match
-                        break;
-                    }
-                    i++;
-                }
-                break;
-            }
-            case TOKEN_INT:
-            {
-                printf("%s(%d)\n", get_token_type_name(tok.type), tok.value.intValue);
-                break;
-            }
-            case TOKEN_VARNAME:
-            {
-                printf("%s(%c)\n", get_token_type_name(tok.type), tok.value.varName);
-                break;
-            }
-            case TOKEN_PUNCTUATION:
-            {
-                printf("%s(%c)\n", get_token_type_name(tok.type), tok.value.varName);
-                break;
-            }
-            case TOKEN_QUOTATION:
-            {
-                printf("%s\n", get_token_type_name(tok.type));
-                break;
-            }
-            case TOKEN_COMMA:
-            {
-                printf("%s\n", get_token_type_name(tok.type));
-                break;
-            }
-            case TOKEN_EOL:
-            {
-                printf("%s\n", get_token_type_name(tok.type));
-                break;
-            }
-            case TOKEN_ARITHMETIC:
-            {
-                const char *math_syms[] = {"+", "-", "*", "/"};
-                printf("%s(%s)\n", get_token_operation_name(tok.value.operation), math_syms[tok.value.operation]);
-                break;
-            }
-            case TOKEN_EQUALS:
-            {
-                printf("%s(=)\n", get_token_type_name(tok.type));
-                break;
-            }
-            default:
-            {
-                printf("%s\n", get_token_type_name(tok.type));
-                break;
-            }
-            }
-            t = t->next;
-        }
-        curr = curr->next;
-    }
-}
-
-const char *get_keyword_name(KeywordType kw)
-{
-    switch (kw)
-    {
-    case KW_LET:
-    {
-        return "LET";
-    }
-    case KW_PRINT:
-    {
-        return "PRINT";
-    }
-    default:
-    {
-        return "UNKNOWN";
-    }
-    }
-}
-
-void parse_let(token_t *stream)
-{
-    printf("Inside Parse Let\n");
-}
-
-void parse_print(token_t *stream)
-{
-    printf("Inside Parse Print\n");
+    return KW_UNKNOWN;
 }
