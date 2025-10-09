@@ -134,10 +134,12 @@ PTOKEN tokenize_file(char *buff, long file_size)
             tok_count++;
         }
     }
+    // EOF + NL?
+    tok_count = tok_count + 2;
 
     printf("Tok Count: %d\n", tok_count);
 
-    TOKEN *tok_array = calloc(tok_count + 1, sizeof(TOKEN));
+    TOKEN *tok_array = calloc(tok_count, sizeof(TOKEN));
     if (NULL == tok_array)
     {
         perror("Tok Array Calloc Failed");
@@ -153,18 +155,34 @@ PTOKEN tokenize_file(char *buff, long file_size)
         return NULL;
     }
     int index = 0;
-    char *word = strtok(temp, " \n");
-    while (word != NULL && index < tok_count)
+    char *save_outer;
+    char *save_inner;
+    char *line = strtok_r(temp, "\n", &save_outer);
+    while (line != NULL && index < tok_count)
     {
-        TOKEN tok = analyze_word(word);
-        tok.line_num = 0;
-        tok_array[index] = tok;
+        char *word = strtok_r(line, " ", &save_inner);
+        while (word != NULL && index < tok_count)
+        {
+            TOKEN tok = analyze_word(word);
+            tok.token_num = index + 1;
+            tok_array[index++] = tok;
+            word = strtok_r(NULL, " ", &save_inner);
+        }
+        TOKEN eol = {0};
+        eol.lexeme = "\\n";
+        eol.type = TOKEN_EOL;
+        eol.token_num = index + 1;
+        tok_array[index++] = eol;
 
-        index++;
-        word = strtok(NULL, " \n");
+        line = strtok_r(NULL, "\n", &save_outer);
     }
 
-    free(temp);
+    for (int x = 0; x < tok_count; x++)
+    {
+        printf("Array Data:\nToken Num: %d\nToken Type: %s\nLexeme: %s\n\n", tok_array[x].token_num, get_token_type_name(tok_array[x].type), tok_array[x].lexeme);
+    }
+
+    // free(temp);
 
     return tok_array;
 }
@@ -356,4 +374,13 @@ int get_Keyword_Enum(char *word)
         return KW_PRINT;
     }
     return KW_UNKNOWN;
+}
+
+const char *get_token_type_name(TokenType type)
+{
+    if (type >= 0 && type < sizeof(token_names) / sizeof(token_names[0]) && token_names[type])
+    {
+        return token_names[type];
+    }
+    return "UNKNOWN_TOKEN";
 }
