@@ -80,7 +80,8 @@ long load_file(char *filename, char **buff)
     Read File
     populate buff w/file contents
 
-    return file_len*/
+    return file_len
+    */
 
     if (NULL == filename)
     {
@@ -125,7 +126,8 @@ PTOKEN tokenize_file(char *buff, long file_size)
         return NULL;
     }
 
-    int tok_count = 1;
+    int tok_count = 0;
+    int line_count = 0;
 
     for (int i = 0; i < file_size; i++)
     {
@@ -133,9 +135,14 @@ PTOKEN tokenize_file(char *buff, long file_size)
         {
             tok_count++;
         }
+        if (buff[i] == '\n')
+        {
+            line_count++;
+        }
     }
-    // EOF + NL?
-    tok_count = tok_count + 2;
+    tok_count++;
+
+    tok_count += line_count;
 
     printf("Tok Count: %d\n", tok_count);
 
@@ -154,9 +161,11 @@ PTOKEN tokenize_file(char *buff, long file_size)
         free(tok_array);
         return NULL;
     }
+
     int index = 0;
     char *save_outer;
     char *save_inner;
+
     char *line = strtok_r(temp, "\n", &save_outer);
     while (line != NULL && index < tok_count)
     {
@@ -177,7 +186,7 @@ PTOKEN tokenize_file(char *buff, long file_size)
         line = strtok_r(NULL, "\n", &save_outer);
     }
 
-    for (int x = 0; x < tok_count; x++)
+    for (int x = 0; x < index; x++)
     {
         printf("Array Data:\nToken Num: %d\nToken Type: %s\nLexeme: %s\n\n", tok_array[x].token_num, get_token_type_name(tok_array[x].type), tok_array[x].lexeme);
     }
