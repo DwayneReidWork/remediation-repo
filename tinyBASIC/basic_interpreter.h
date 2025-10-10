@@ -20,15 +20,6 @@ typedef enum
     TOKEN_UNKNOWN,
 } TokenType;
 
-// typedef enum
-// {
-//     TOKEN_ADDITION = 0,
-//     TOKEN_SUBTRACTION,
-//     TOKEN_MULTIPLICATION,
-//     TOKEN_DIVISION,
-//     TOKEN_OP_UNKNOWN,
-// } OperationType;
-
 typedef enum
 {
     KW_UNKNOWN = 0,
@@ -37,41 +28,12 @@ typedef enum
     KW_EOF,
 } KeywordType;
 
-// typedef struct _TOKEN
-// {
-//     TokenType type;
-//     int token_num;
-//     char *lexeme;
-//     union
-//     {
-//         char varName;
-//         int intValue;
-//         OperationType operation;
-//         KeywordType keyword;
-//     } value;
-// } TOKEN, *PTOKEN;
-
 typedef struct _TOKEN
 {
     TokenType type;
     int token_num;
     char *lexeme;
 } TOKEN, *PTOKEN;
-
-typedef struct token
-{
-    TOKEN token;
-    struct token *next;
-} token_t;
-
-typedef struct node
-{
-    int line_num;
-    char *line;
-    token_t *tokens;
-    struct node *next;
-    struct node *prev;
-} node_t;
 
 const char *token_names[] = {
     "TOKEN_DUMMY", // For Enum starting at 1
@@ -105,11 +67,54 @@ bool is_keyword(char *word);
 bool is_math_symbol(char *word);
 bool is_punctuation(char *word);
 bool line_format_checker(PTOKEN arr_of_toks);
+const char *get_token_type_name(TokenType type);
+int get_Keyword_Enum(char *word);
+int parse_file(char *filename);
+long load_file(char *filename, char **buff);
+PTOKEN tokenize_file(char *buff, long file_size);
+TOKEN analyze_word(char *string);
+
+// typedef enum
+// {
+//     TOKEN_ADDITION = 0,
+//     TOKEN_SUBTRACTION,
+//     TOKEN_MULTIPLICATION,
+//     TOKEN_DIVISION,
+//     TOKEN_OP_UNKNOWN,
+// } OperationType;
+
+// typedef struct _TOKEN
+// {
+//     TokenType type;
+//     int token_num;
+//     char *lexeme;
+//     union
+//     {
+//         char varName;
+//         int intValue;
+//         OperationType operation;
+//         KeywordType keyword;
+//     } value;
+// } TOKEN, *PTOKEN;
+
+// typedef struct token
+// {
+//     TOKEN token;
+//     struct token *next;
+// } token_t;
+
+// typedef struct node
+// {
+//     int line_num;
+//     char *line;
+//     token_t *tokens;
+//     struct node *next;
+//     struct node *prev;
+// } node_t;
+
 // char *load_file_contents(char *filename);
 // const char *get_keyword_name(KeywordType kw);
 // const char *get_token_operation_name(OperationType type);
-const char *get_token_type_name(TokenType type);
-int get_Keyword_Enum(char *word);
 // node_t *create_new_node(int line_num, char *line);
 // node_t *parse_lines_to_nodes(char *file_contents);
 // node_t *parse_node_word_by_word(node_t *head);
@@ -123,16 +128,11 @@ int get_Keyword_Enum(char *word);
 // void parse_print(token_t *stream);
 // void tokenize_line(node_t *node);
 
-int parse_file(char *filename);
-long load_file(char *filename, char **buff);
-PTOKEN tokenize_file(char *buff, long file_size);
-TOKEN analyze_word(char *string);
-
-typedef struct
-{
-    KeywordType keyword;
-    void (*parse_function)(token_t *);
-} KeywordHandler;
+// typedef struct
+// {
+//     KeywordType keyword;
+//     void (*parse_function)(token_t *);
+// } KeywordHandler;
 
 // // Struct of function pointers for the Keyword handler struct. Assigns function to Keyword.
 // KeywordHandler keyword_handlers[] = {
