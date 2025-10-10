@@ -140,3 +140,61 @@ TOKEN analyze_word(char *string);
 //     {KW_PRINT, parse_print},
 //     {KW_EOF, NULL} // should never be called
 // };
+
+// FROM basic_interpreter.c
+
+// int split_buff_to_lines(char *buff, char **lines, int *line_count, long file_size)
+// {
+//     /*
+//     taking buffer and splitting it on newline
+//     adding that to lines
+//     increment line count
+//     */
+//     // make sure this is not null first
+//     *line_count = 1; // no matter what assume one line.
+//     int iCurrentLineLen = 0;
+//     int currentLine = 0;
+//     char *left = buff;
+//     char *right = left;
+
+//     for (int i = 0; i < file_size; i++)
+//     {
+//         if (buff[i] == '\n')
+//         {
+//             (*line_count)++;
+//         }
+//     }
+
+//     lines = calloc(*line_count, sizeof(char *));
+//     // error check that
+//     if (NULL == lines)
+//     {
+//         perror("Lines Calloc Failed.");
+//         return ERROR;
+//     }
+
+//     while ('\0' != *left)
+//     {
+//         while (*right != '\n' && *right != '\0' && right < buff + file_size)
+//         {
+//             right++;
+//         }
+
+//         iCurrentLineLen = right - left + 1;
+//         // allocate indv line
+//         lines[currentLine] = calloc(iCurrentLineLen, sizeof(char));
+//         if (lines[currentLine] == NULL)
+//         {
+//             perror("*Lines Calloc Failed");
+//             return ERROR;
+//         }
+//         memcpy(lines[currentLine], left, iCurrentLineLen - 1);
+//         printf("Line: %s\n", lines[currentLine]);
+
+//         // move left pointer over to EOL
+//         right++;
+//         currentLine++;
+//         left = right;
+//     }
+//     return 0;
+// }
