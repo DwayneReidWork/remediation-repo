@@ -11,18 +11,23 @@ typedef enum
     TOKEN_ARITHMETIC,
     TOKEN_EQUALS,
     TOKEN_EOL,
+    TOKEN_EOF,
     TOKEN_COMMA,
-    TOKEN_UNKNOWN,
-} TokenType;
-
-typedef enum
-{
-    TOKEN_ADDITION = 0,
+    TOKEN_ADDITION,
     TOKEN_SUBTRACTION,
     TOKEN_MULTIPLICATION,
     TOKEN_DIVISION,
-    TOKEN_OP_UNKNOWN,
-} OperationType;
+    TOKEN_UNKNOWN,
+} TokenType;
+
+// typedef enum
+// {
+//     TOKEN_ADDITION = 0,
+//     TOKEN_SUBTRACTION,
+//     TOKEN_MULTIPLICATION,
+//     TOKEN_DIVISION,
+//     TOKEN_OP_UNKNOWN,
+// } OperationType;
 
 typedef enum
 {
@@ -32,18 +37,25 @@ typedef enum
     KW_EOF,
 } KeywordType;
 
+// typedef struct _TOKEN
+// {
+//     TokenType type;
+//     int token_num;
+//     char *lexeme;
+//     union
+//     {
+//         char varName;
+//         int intValue;
+//         OperationType operation;
+//         KeywordType keyword;
+//     } value;
+// } TOKEN, *PTOKEN;
+
 typedef struct _TOKEN
 {
     TokenType type;
     int token_num;
-    char *lexeme; // explain?
-    union
-    {
-        char varName;
-        int intValue;
-        OperationType operation;
-        KeywordType keyword;
-    } value;
+    char *lexeme;
 } TOKEN, *PTOKEN;
 
 typedef struct token
@@ -71,9 +83,13 @@ const char *token_names[] = {
     "TOKEN_ARITHMETIC",
     "TOKEN_EQUALS",
     "TOKEN_EOL",
+    "TOKEN_EOF",
     "TOKEN_COMMA",
+    "TOKEN_ADDITION",
+    "TOKEN_SUBTRACTION",
+    "TOKEN_MULTIPLICATION",
+    "TOKEN_DIVISION",
     "TOKEN_UNKNOWN",
-    "UNKNOWN_TYPE",
 };
 
 const char *operation_names[] = {
@@ -88,6 +104,7 @@ bool is_all_digits(char *word);
 bool is_keyword(char *word);
 bool is_math_symbol(char *word);
 bool is_punctuation(char *word);
+bool line_format_checker(PTOKEN arr_of_toks);
 // char *load_file_contents(char *filename);
 // const char *get_keyword_name(KeywordType kw);
 // const char *get_token_operation_name(OperationType type);
