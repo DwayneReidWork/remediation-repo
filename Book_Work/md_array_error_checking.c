@@ -43,7 +43,7 @@ int day_of_year(int year, int month, int day)
         return -1;
     }
 
-    if (day < 1 || year > 31)
+    if (day < 1 || day > 31)
     {
         printf("Invalid day.\n");
         return -1;

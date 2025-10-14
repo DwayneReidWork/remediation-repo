@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 int parse_file(char *filename)
 {
     int status = SUCCESS;
+    bool check = false;
     /*
     Open file
     get contents
@@ -66,7 +67,14 @@ int parse_file(char *filename)
     {
         return ERROR;
     }
-    line_format_checker(arr_of_toks);
+
+    check = line_format_checker(arr_of_toks);
+    if (check == false)
+    {
+        printf("Invalid Line Format.\n");
+        return ERROR;
+    }
+
     // for line in lines
     // function to split line by words
     // do_tokenize
@@ -439,22 +447,45 @@ bool line_format_checker(PTOKEN arr_of_toks)
     printf("Built pattern: [%s]\n", pattern_str);
 
     bool match_found = false;
+    int matched_index = -1;
 
     // compare sentence structure against
     for (int k = 0; valid_patterns[k] != NULL; k++)
     {
         if (strcmp(pattern_str, valid_patterns[k]) == 0)
         {
+
+            printf("Valid pattern found: %s\n", valid_patterns[k]);
+            matched_index = k;
             match_found = true;
             break;
         }
     }
-    free(pattern_str);
-    free(sentence_structure);
 
     if (match_found)
     {
         printf("Pattern matched.\n");
+        switch (matched_index)
+        {
+        case 0:
+            // char *endptr = NULL;
+            // char *varname = arr_of_toks[2].lexeme;
+            // char *value_str = arr_of_toks[4].lexeme;
+            // long value = strtol(value_str, &endptr, 10);
+            // // How to do assignment under the hood?
+            // int varname = value;
+            // printf("Set [%s] to [%ld]\n", varname, value);
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            printf("Unandled Pattern.\n");
+            break;
+        }
         // Do something depending on which one matched.
         return true;
     }
@@ -463,5 +494,7 @@ bool line_format_checker(PTOKEN arr_of_toks)
         printf("Invalid pattern.\n");
         return false;
     }
+    free(pattern_str);
+    free(sentence_structure);
     return true;
 }

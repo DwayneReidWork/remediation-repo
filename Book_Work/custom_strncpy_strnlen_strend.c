@@ -32,7 +32,7 @@ int main()
     printf("Custom strend output for {%s} and {%s} is {%d}\n", str2, str3, status);
 
     status = custom_strncmp(str, str2, limit);
-    printf("Custom strncmp Output:\nComparing first %d chars of strings\n%s\n%s\nResult: %d\n", limit, str, str2, status);
+    printf("Custom strncmp Output:\nComparing first %d chars of strings\n%s\n%s\nResult: %d\n[0 for match 1 for No Match.]\n", limit, str, str2, status);
 
     return 0;
 }
