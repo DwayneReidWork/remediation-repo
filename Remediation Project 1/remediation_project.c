@@ -22,9 +22,15 @@ int main()
 {
 
     mock_struct *instance_of_struct = malloc(sizeof(mock_struct));
-    mock_struct loaded_struct;
+    mock_struct *loaded_struct = malloc(sizeof(mock_struct));
 
     if (NULL == instance_of_struct)
+    {
+        printf("Malloc failed");
+        return -1;
+    }
+
+    if (NULL == loaded_struct)
     {
         printf("Malloc failed");
         return -1;
@@ -37,11 +43,12 @@ int main()
     save_data(instance_of_struct);
 
     printf("Now loading data\n");
-    load_data(&loaded_struct);
+    load_data(loaded_struct);
 
-    free(loaded_struct.name);
+    free(loaded_struct->name);
     free(instance_of_struct->name);
     free(instance_of_struct);
+    free(loaded_struct);
 
     return 0;
 }

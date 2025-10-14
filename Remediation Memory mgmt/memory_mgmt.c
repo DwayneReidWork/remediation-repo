@@ -147,23 +147,52 @@ int load(Node **head)
             // stop at EOF or read error
             break;
 
-        item.name = read_string(fp);
-        if (!item.name)
-            // failed read
+        // Read name
+        int name_len;
+        if (fread(&name_len, sizeof(int), 1, fp) != 1)
             break;
 
-        item.category = read_string(fp);
-        if (!item.category)
+        item.name = malloc(name_len + 1);
+        if (fread(item.name, sizeof(char), name_len, fp) != (size_t)name_len)
+        {
+            free(item.name);
             break;
+        }
+        item.name[name_len] = '\0';
 
-        fread(&item.quantity, sizeof(int), 1, fp);
-        fread(&item.price, sizeof(float), 1, fp);
+        // Read category
+        int cat_len;
+        if (fread(&cat_len, sizeof(int), 1, fp) != 1)
+        {
+            free(item.name);
+            break;
+        }
 
+        item.category = malloc(cat_len + 1);
+        if (fread(item.category, sizeof(char), cat_len, fp) != (size_t)cat_len)
+        {
+            free(item.name);
+            free(item.category);
+            break;
+        }
+        item.category[cat_len] = '\0';
+
+        // Read quantity and price
+        if (fread(&item.quantity, sizeof(int), 1, fp) != 1 ||
+            fread(&item.price, sizeof(float), 1, fp) != 1)
+        {
+            free(item.name);
+            free(item.category);
+            break;
+        }
+
+        // Insert into linked list
         insertAtEnd(head, item);
-        free(item.category);
-        free(item.name);
-    }
 
+        // Free temporary memory (linked list node makes its own copies)
+        free(item.name);
+        free(item.category);
+    }
     fclose(fp);
     return 0;
 }
@@ -186,9 +215,20 @@ int save(Node *head)
     Node *current = head;
     while (current != NULL)
     {
+        // Write ID
         fwrite(&current->item_data.id, sizeof(int), 1, fp);
-        fwrite(current->item_data.name, strlen(current->item_data.name) + 1, 1, fp);
-        fwrite(current->item_data.category, strlen(current->item_data.category) + 1, 1, fp);
+
+        // Write name
+        int name_len = strlen(current->item_data.name);
+        fwrite(&name_len, sizeof(int), 1, fp);
+        fwrite(current->item_data.name, sizeof(char), name_len, fp);
+
+        // Write category
+        int cat_len = strlen(current->item_data.category);
+        fwrite(&cat_len, sizeof(int), 1, fp);
+        fwrite(current->item_data.category, sizeof(char), cat_len, fp);
+
+        // Write quantity and price
         fwrite(&current->item_data.quantity, sizeof(int), 1, fp);
         fwrite(&current->item_data.price, sizeof(float), 1, fp);
 
