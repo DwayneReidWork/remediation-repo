@@ -22,9 +22,6 @@ int main(int argc, char *argv[])
         return ERROR;
     }
 
-    // Debuggint
-    printf("Argv1 recvd: %s\n", argv[1]);
-
     // Read the bytes of the executable
     FILE *file = fopen(argv[1], "rb");
     if (NULL == file)

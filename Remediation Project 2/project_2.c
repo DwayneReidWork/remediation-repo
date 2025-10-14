@@ -56,7 +56,7 @@ int save_data(Player *p_ptr)
         printf("Error: Filename buffer is too small.\n");
         return 1;
     }
-    // merger username and time to format "name_time.gamesave" [str char longint str]
+    // merge username and time to format "name_time.gamesave" [str char longint str]
     snprintf(save_name, sizeof(save_name), "%s%c%ld%s", p_ptr->username, '_', (long)timestamp, ".gamesave");
 
     printf("Save File Name: %s\n", save_name);
@@ -144,10 +144,12 @@ int load_data(Player *p_ptr)
         if (p_ptr->username)
             free(p_ptr->username);
         // Username Len
+        // Uses & because username_len is an int but you need a mem address
         fread(&p_ptr->username_len, sizeof(p_ptr->username_len), 1, load_file);
 
         // Malloc for user
         p_ptr->username = malloc(p_ptr->username_len + 1);
+        // doesnt need & because username is already a ptr to mem addy
         fread(p_ptr->username, sizeof(char), p_ptr->username_len, load_file);
         p_ptr->username[p_ptr->username_len] = '\0';
 

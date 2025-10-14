@@ -11,10 +11,9 @@ def main():
     data = load_file()
     #user_search(data) #returns all usernames
     #timestamp_search(data)
-    #http_search(data) #searsh for get/put/post/delete
+    http_search(data) #search for get/put/post/delete
     #api_endpoint_search(data)
     #response_size_search(data)
-
     #frank_search(data) #search for all frank 403 errors
 
 def load_file():
@@ -44,7 +43,7 @@ def http_search(data):
     while True:
         u_input = input(
             "Please enter the number of the request type you'd like to search:\n"
-            "1. GET\n2. PUT\n3. POST\n4. DELETE\n\n"
+            "1. GET\n2. PUT\n3. POST\n4. DELETE\n\n-> "
         )
 
         try:
@@ -102,8 +101,6 @@ def frank_search(data):
             if name == "frank":
                 if error_code == "403":
                     print(line)
-
-
 
 if __name__ == "__main__":
     main()

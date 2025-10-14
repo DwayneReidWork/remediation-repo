@@ -53,9 +53,9 @@ def test_importCSV(test_file):
     assert result is not None      
     assert len(result) == 7              
     # PID is string 0 index after that is category name for comparison
-    assert result['1'][0]['name'] == 'alice'
-    assert result['2'][0]['name'] == 'bob'
-    assert result['7'][0]['name'] == 'Tyler'
+    assert result['1']['name'] == 'alice'
+    assert result['2']['name'] == 'bob'
+    assert result['7']['name'] == 'Tyler'
 
 # Import with invalid file name
 def test_importCSV_invalid_file(invalid_file):

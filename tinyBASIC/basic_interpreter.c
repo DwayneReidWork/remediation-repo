@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 int parse_file(char *filename)
 {
     int status = SUCCESS;
+    bool check = false;
     /*
     Open file
     get contents
@@ -60,8 +61,19 @@ int parse_file(char *filename)
 
     // function to split file contents by line
     // status = split_buff_to_lines(buff, lines, &line_count, file_size);
-    tokenize_file(buff, file_size);
+    PTOKEN arr_of_toks = tokenize_file(buff, file_size);
     // error handling
+    if (NULL == arr_of_toks)
+    {
+        return ERROR;
+    }
+
+    check = line_format_checker(arr_of_toks);
+    if (check == false)
+    {
+        printf("Invalid Line Format.\n");
+        return ERROR;
+    }
 
     // for line in lines
     // function to split line by words
@@ -70,7 +82,20 @@ int parse_file(char *filename)
     //  function to interpret keywords from token
     // function to validate sentence structure is valid
     // function to evaluate valid line
-
+    // iterate through freeing until you hit EOF token
+    for (int i = 0;; i++)
+    {
+        if (arr_of_toks[i].lexeme != NULL)
+        {
+            free(arr_of_toks[i].lexeme);
+        }
+        if (arr_of_toks[i].type == TOKEN_EOF)
+        {
+            break;
+        }
+    }
+    free(arr_of_toks);
+    free(buff);
     return status;
 }
 
@@ -80,7 +105,8 @@ long load_file(char *filename, char **buff)
     Read File
     populate buff w/file contents
 
-    return file_len*/
+    return file_len
+    */
 
     if (NULL == filename)
     {
@@ -104,9 +130,10 @@ long load_file(char *filename, char **buff)
         perror("Malloc failed.");
         return ERROR;
     }
-    fread(*buff, file_size, file_size, file_contents);
+    size_t bytes_read = fread(*buff, 1, file_size, file_contents);
+    (*buff)[bytes_read] = '\0';
     fclose(file_contents);
-    return file_size;
+    return bytes_read;
 }
 
 PTOKEN tokenize_file(char *buff, long file_size)
@@ -125,7 +152,8 @@ PTOKEN tokenize_file(char *buff, long file_size)
         return NULL;
     }
 
-    int tok_count = 1;
+    int tok_count = 0;
+    int line_count = 0;
 
     for (int i = 0; i < file_size; i++)
     {
@@ -133,9 +161,14 @@ PTOKEN tokenize_file(char *buff, long file_size)
         {
             tok_count++;
         }
+        if (buff[i] == '\n')
+        {
+            line_count++;
+        }
     }
-    // EOF + NL?
-    tok_count = tok_count + 2;
+    tok_count++;
+
+    tok_count += line_count;
 
     printf("Tok Count: %d\n", tok_count);
 
@@ -154,9 +187,11 @@ PTOKEN tokenize_file(char *buff, long file_size)
         free(tok_array);
         return NULL;
     }
+
     int index = 0;
-    char *save_outer;
-    char *save_inner;
+    char *save_outer = NULL;
+    char *save_inner = NULL;
+
     char *line = strtok_r(temp, "\n", &save_outer);
     while (line != NULL && index < tok_count)
     {
@@ -168,80 +203,30 @@ PTOKEN tokenize_file(char *buff, long file_size)
             tok_array[index++] = tok;
             word = strtok_r(NULL, " ", &save_inner);
         }
+        // Use strdup so they can be freed in the loop witht he rest of lexemes
         TOKEN eol = {0};
-        eol.lexeme = "\\n";
+        eol.lexeme = strdup("\\n");
         eol.type = TOKEN_EOL;
         eol.token_num = index + 1;
         tok_array[index++] = eol;
 
         line = strtok_r(NULL, "\n", &save_outer);
     }
+    TOKEN eof = {0};
+    eof.lexeme = strdup("\\0");
+    eof.type = TOKEN_EOF;
+    eof.token_num = index + 1;
+    tok_array[index++] = eof;
 
-    for (int x = 0; x < tok_count; x++)
+    for (int x = 0; x < index; x++)
     {
         printf("Array Data:\nToken Num: %d\nToken Type: %s\nLexeme: %s\n\n", tok_array[x].token_num, get_token_type_name(tok_array[x].type), tok_array[x].lexeme);
     }
 
-    // free(temp);
+    free(temp);
 
     return tok_array;
 }
-
-// int split_buff_to_lines(char *buff, char **lines, int *line_count, long file_size)
-// {
-//     /*
-//     taking buffer and splitting it on newline
-//     adding that to lines
-//     increment line count
-//     */
-//     // make sure this is not null first
-//     *line_count = 1; // no matter what assume one line.
-//     int iCurrentLineLen = 0;
-//     int currentLine = 0;
-//     char *left = buff;
-//     char *right = left;
-
-//     for (int i = 0; i < file_size; i++)
-//     {
-//         if (buff[i] == '\n')
-//         {
-//             (*line_count)++;
-//         }
-//     }
-
-//     lines = calloc(*line_count, sizeof(char *));
-//     // error check that
-//     if (NULL == lines)
-//     {
-//         perror("Lines Calloc Failed.");
-//         return ERROR;
-//     }
-
-//     while ('\0' != *left)
-//     {
-//         while (*right != '\n' && *right != '\0' && right < buff + file_size)
-//         {
-//             right++;
-//         }
-
-//         iCurrentLineLen = right - left + 1;
-//         // allocate indv line
-//         lines[currentLine] = calloc(iCurrentLineLen, sizeof(char));
-//         if (lines[currentLine] == NULL)
-//         {
-//             perror("*Lines Calloc Failed");
-//             return ERROR;
-//         }
-//         memcpy(lines[currentLine], left, iCurrentLineLen - 1);
-//         printf("Line: %s\n", lines[currentLine]);
-
-//         // move left pointer over to EOL
-//         right++;
-//         currentLine++;
-//         left = right;
-//     }
-//     return 0;
-// }
 
 TOKEN analyze_word(char *word)
 {
@@ -252,12 +237,10 @@ TOKEN analyze_word(char *word)
     if (is_keyword(word))
     {
         tok.type = TOKEN_KEYWORD;
-        tok.value.keyword = get_Keyword_Enum(word);
     }
     else if (is_all_digits(word))
     {
         tok.type = TOKEN_INT;
-        tok.value.intValue = atoi(word);
     }
     else if (is_punctuation(word))
     {
@@ -277,7 +260,6 @@ TOKEN analyze_word(char *word)
         {
             tok.type = TOKEN_PUNCTUATION;
         }
-        tok.value.varName = word[0];
     }
     else if (is_math_symbol(word))
     {
@@ -285,31 +267,26 @@ TOKEN analyze_word(char *word)
         {
             tok.type = TOKEN_EQUALS;
         }
-        else
+        else if (strcmp(word, "+") == 0)
         {
-            tok.type = TOKEN_ARITHMETIC;
-            if (strcmp(word, "+") == 0)
-            {
-                tok.value.operation = TOKEN_ADDITION;
-            }
-            else if (strcmp(word, "-") == 0)
-            {
-                tok.value.operation = TOKEN_SUBTRACTION;
-            }
-            else if (strcmp(word, "*") == 0)
-            {
-                tok.value.operation = TOKEN_MULTIPLICATION;
-            }
-            else if (strcmp(word, "/") == 0)
-            {
-                tok.value.operation = TOKEN_DIVISION;
-            }
+            tok.type = TOKEN_ADDITION;
+        }
+        else if (strcmp(word, "-") == 0)
+        {
+            tok.type = TOKEN_SUBTRACTION;
+        }
+        else if (strcmp(word, "*") == 0)
+        {
+            tok.type = TOKEN_MULTIPLICATION;
+        }
+        else if (strcmp(word, "/") == 0)
+        {
+            tok.type = TOKEN_DIVISION;
         }
     }
     else
     {
         tok.type = TOKEN_VARNAME;
-        tok.value.varName = word[0];
     }
 
     return tok;
@@ -383,4 +360,141 @@ const char *get_token_type_name(TokenType type)
         return token_names[type];
     }
     return "UNKNOWN_TOKEN";
+}
+
+bool line_format_checker(PTOKEN arr_of_toks)
+{
+    /*
+    iterate through array
+    while not null or tok_EOL
+    add tok[i].type to temp sentence structure array.
+    when reach EOL or EOF compare array against valid formats based on keyword
+    */
+    /*
+    vars:
+    Char sentence buffer[];  to append to
+    counter (maybe need token count?)
+    struct array of valid sentence structures? maybe split by KW?
+    */
+    int i = 0, counter = 0;
+    const char **sentence_structure;
+    const char *valid_patterns[] = {
+        "TOKEN_INT TOKEN_KEYWORD TOKEN_VARNAME TOKEN_EQUALS TOKEN_INT",
+        "TOKEN_INT TOKEN_KEYWORD TOKEN_VARNAME TOKEN_EQUALS TOKEN_VARNAME",
+        "TOKEN_INT TOKEN_KEYWORD TOKEN_VARNAME TOKEN_EQUALS TOKEN_VARNAME TOKEN_ARITHMETIC TOKEN_INT",
+        "TOKEN_INT TOKEN_KEYWORD TOKEN_VARNAME TOKEN_EQUALS TOKEN_INT TOKEN_ARITHMETIC TOKEN_INT",
+        NULL};
+
+    if (NULL == arr_of_toks)
+    {
+        printf("NULL array recvd.\n");
+        return false;
+    }
+
+    while (arr_of_toks[i].type != TOKEN_EOL && arr_of_toks[i].type != TOKEN_EOF)
+    {
+        // get sentence length
+        counter++;
+        i++;
+    }
+
+    // malloc char* for that size
+    sentence_structure = malloc(counter * sizeof(char *));
+    if (NULL == sentence_structure)
+    {
+        perror("Malloc Failed");
+        return false;
+    }
+
+    // Reset counter
+    i = 0;
+
+    while (arr_of_toks[i].type != TOKEN_EOL && arr_of_toks[i].type != TOKEN_EOF)
+    {
+        // add stuff to it
+        sentence_structure[i] = get_token_type_name(arr_of_toks[i].type);
+        i++;
+    }
+
+    // mem mgmt for building pattern to match against
+    size_t total_len = 0;
+    for (int j = 0; j < counter; j++)
+    {
+        // Add each word + space
+        total_len += strlen(sentence_structure[j]) + 1;
+    }
+
+    // +1 for null term
+    char *pattern_str = malloc(total_len + 1);
+    if (NULL == pattern_str)
+    {
+        perror("Pattern malloc failed");
+        free(sentence_structure);
+        return false;
+    }
+
+    pattern_str[0] = '\0';
+    for (int j = 0; j < counter; j++)
+    {
+        // copy each token into the string
+        strcat(pattern_str, sentence_structure[j]);
+        if (j < counter - 1)
+        {
+            strcat(pattern_str, " ");
+        }
+    }
+
+    printf("Built pattern: [%s]\n", pattern_str);
+
+    bool match_found = false;
+    int matched_index = -1;
+
+    // compare sentence structure against
+    for (int k = 0; valid_patterns[k] != NULL; k++)
+    {
+        if (strcmp(pattern_str, valid_patterns[k]) == 0)
+        {
+
+            printf("Valid pattern found: %s\n", valid_patterns[k]);
+            matched_index = k;
+            match_found = true;
+            break;
+        }
+    }
+
+    if (match_found)
+    {
+        printf("Pattern matched.\n");
+        switch (matched_index)
+        {
+        case 0:
+            // char *endptr = NULL;
+            // char *varname = arr_of_toks[2].lexeme;
+            // char *value_str = arr_of_toks[4].lexeme;
+            // long value = strtol(value_str, &endptr, 10);
+            // // How to do assignment under the hood?
+            // int varname = value;
+            // printf("Set [%s] to [%ld]\n", varname, value);
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            printf("Unandled Pattern.\n");
+            break;
+        }
+        // Do something depending on which one matched.
+        return true;
+    }
+    else
+    {
+        printf("Invalid pattern.\n");
+        return false;
+    }
+    free(pattern_str);
+    free(sentence_structure);
+    return true;
 }
