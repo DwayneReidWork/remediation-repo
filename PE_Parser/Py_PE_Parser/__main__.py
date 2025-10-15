@@ -2,6 +2,7 @@ import argparse
 import socket
 import struct
 
+
 """
 More work with structs like these?
 Will this look like a general struc.unpack format and just pass in whatever of these formates depending on recvd packet type?
@@ -9,7 +10,7 @@ Will this look like a general struc.unpack format and just pass in whatever of t
 PING_PACK = "<"BB"
 CONNECT-PACK "<BHL"
 
-def custom_unpack(format_str, filw_stream):
+def custom_unpack(format_str, file_stream):
     if format_str == PING_PACK:
         do stuff
     elif format string == CONNECT_PACK:
