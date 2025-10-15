@@ -2,9 +2,27 @@ import argparse
 import socket
 import struct
 
-DOS_HEADER = "<HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHL"
+"""
+More work with structs like these?
+Will this look like a general struc.unpack format and just pass in whatever of these formates depending on recvd packet type?
+
+PING_PACK = "<"BB"
+CONNECT-PACK "<BHL"
+
+def custom_unpack(format_str, filw_stream):
+    if format_str == PING_PACK:
+        do stuff
+    elif format string == CONNECT_PACK:
+        do more stuff
+    ...
+    
+How to from socket?
+
+"""
+
 FILE_HEADER = "<HHLLLHH"
 OPTIONAL_HEADER = "<HBBLLLLQLLHHHHHHLLLLHHQQQQLL"
+DOS_HEADER = "<HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHL"
 NT_HEADER =f"<L{FILE_HEADER}{OPTIONAL_HEADER}"
 
 def main():
@@ -14,7 +32,6 @@ def main():
 
     print(f"filename recieved {args.exe}")
     parsefile(filename=args.exe)
-
 
 def parsefile(filename): 
     header_size = struct.calcsize(DOS_HEADER)

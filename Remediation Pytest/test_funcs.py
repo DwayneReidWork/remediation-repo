@@ -28,7 +28,8 @@ def test_port_type_function(port_string, output):
     assert port_type(port_string) == output
 
 @pytest.mark.parametrize("port_string, output", [("-1", ValueError),
-                                                 ("67000", ValueError)])
+                                                 ("67000", ValueError),
+                                                 ("abcd", ValueError)])
 def test_port_type_function_invalid_port(port_string, output):
     #Test port_type function with invalid params
     with pytest.raises(ValueError):

@@ -20,7 +20,6 @@ void fill_struct(mock_struct *ms_ptr);
 
 int main()
 {
-
     mock_struct *instance_of_struct = malloc(sizeof(mock_struct));
     mock_struct *loaded_struct = malloc(sizeof(mock_struct));
 
@@ -99,7 +98,9 @@ int load_data(mock_struct *ms_ptr)
     fread(&ms_ptr->name_len, sizeof(ms_ptr->name_len), 1, load_file);
     ms_ptr->name = malloc(ms_ptr->name_len + 1);
     // Read Name
+    // Read a names_len amount of chars for full name
     fread(ms_ptr->name, sizeof(char), ms_ptr->name_len, load_file);
+    // null term name
     ms_ptr->name[ms_ptr->name_len] = '\0';
     // Game Status
     fread(&ms_ptr->game_over, sizeof(ms_ptr->game_over), 1, load_file);
@@ -113,7 +114,7 @@ int load_data(mock_struct *ms_ptr)
     {
         for (int j = 0; j < COL_SIZE; j++)
         {
-            printf("%c", (char)ms_ptr->board[i][j]);
+            printf("%c", ms_ptr->board[i][j]);
         }
         printf("\n");
     }

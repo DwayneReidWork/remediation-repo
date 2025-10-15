@@ -189,6 +189,7 @@ PTOKEN tokenize_file(char *buff, long file_size)
     }
 
     int index = 0;
+    // For Use with strtok_r with nested strtoks
     char *save_outer = NULL;
     char *save_inner = NULL;
 

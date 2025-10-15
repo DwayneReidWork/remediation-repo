@@ -24,4 +24,5 @@ remediation_project
 save_file
 
 #misc
-riot.exe
+*.exe
+*.bin
