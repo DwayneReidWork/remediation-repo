@@ -6,6 +6,12 @@
 // Function to send all data, returns total bits on success, -1 on failure
 int send_all(int sock, const uint8_t *data, size_t data_len)
 {
+    // for (int i = 0; i < data_len; i++)
+    // {
+    //     printf("%x", data[i]);
+    // }
+    // printf("\n");
+
     size_t total_sent_bits = 0;
     while (total_sent_bits < data_len)
     {
@@ -39,4 +45,22 @@ int recv_expected(int sock, size_t expected_len, uint8_t *dest, size_t dest_size
         recvd_len += received;
     }
     return recvd_len;
+}
+
+// Receive expected with memory allocation for expected size
+uint8_t *recv_expected_alloc(int sock, size_t expected_len)
+{
+    uint8_t *recvd_bytes = malloc(expected_len);
+    if (NULL == recvd_bytes)
+    {
+        return NULL; // Memory allocation failed
+    }
+    if (-1 == recv_expected(sock, expected_len, recvd_bytes, expected_len))
+    {
+        perror("error in recv expected");
+        free(recvd_bytes);
+        return NULL;
+    }
+
+    return recvd_bytes;
 }

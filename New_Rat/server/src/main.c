@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include "../include/utils.h"
 #include "../include/netcomm.h"
@@ -61,6 +62,92 @@ int main()
         {
             printf("Send Failed\n");
         }
-        printf("Hello message sent.\n");
+        printf("Hello message sent.\nWaiting to Recv Packet\n");
+        // Buffer for data
+        // Null header to recv into and switch on.
+        uint8_t *data = NULL;
+        p_header_t header = {0};
+
+        while (1)
+        {
+            switch (receive_packet(new_socket, &header, &data))
+            {
+            case PING:
+                printf("Ping packet recvd.\n");
+                break;
+            case MUL:
+                printf("Mul packet recvd.\n");
+                break;
+            case ECHO:
+                printf("Echo packet recvd.\n");
+                // calloc 1 element of x size
+                p_echo_t *echo_reply = calloc(1, sizeof(echo_reply));
+                printf("Data recvd: %s\n", data);
+                echo_reply->header.msg_type = ECHO;
+
+                echo_reply->data = malloc(header.p_len);
+                echo_reply->header.p_len = header.p_len;
+                strcpy((char *)echo_reply->data, (char *)data);
+
+                // SERIALIZE SERIALIZE SERIALIZE
+                // Size of header + P_len
+                uint8_t *sendbuff = malloc(sizeof(p_header_t) + htonl(header.p_len));
+                // add header to buffer
+                memcpy(sendbuff, echo_reply, sizeof(p_header_t));
+                // increrment pointer past header and add data
+                memcpy(sendbuff + sizeof(p_header_t), data, htonl(header.p_len));
+
+                send_all(new_socket, sendbuff, sizeof(p_header_t) + htonl(header.p_len));
+                printf("Echo Reply Sent.\n");
+                break;
+            case SHOW:
+                printf("Show packet recvd.\n");
+                break;
+            default:
+                printf("Unknown packet recvd.\n");
+                break;
+            }
+        }
+
+        close(new_socket);
     }
+}
+
+int receive_packet(int client_sock, p_header_t *header, uint8_t **dest)
+{
+    printf("Waiting for Packet.\n");
+
+    if (NULL == header)
+    {
+        perror("Header Invalid");
+        return -1;
+    }
+
+    if (NULL == dest)
+    {
+        perror("Dest Invalid");
+        return -1;
+    }
+
+    ssize_t bytes = recv_expected(client_sock, sizeof(p_header_t), (uint8_t *)header, sizeof(p_header_t));
+
+    printf("Packet Received.\n");
+    if (0 > bytes)
+    {
+        perror("Receive Failed\n");
+        return -1;
+    }
+
+    printf("Recvd Packet Type: %d\n", header->msg_type);
+    printf("Recvd Packet Len: %d\n", htonl(header->p_len));
+
+    *dest = recv_expected_alloc(client_sock, htonl(header->p_len));
+
+    if (NULL == *dest)
+    {
+        perror("Malloc Failed");
+        return -1;
+    }
+
+    return header->msg_type;
 }

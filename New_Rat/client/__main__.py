@@ -1,4 +1,4 @@
-from .controller import CmdController
+from controller import CmdController
 import sys
 
 def main():
