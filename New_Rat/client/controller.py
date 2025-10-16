@@ -110,13 +110,47 @@ class CmdController(cmd2.Cmd):
         else:
             print(f"Error: Failed to receive valid response data. {response}")
 
+    mul_parser = cmd2.Cmd2ArgumentParser()
+    mul_parser.add_argument('num', action='store', type=int, help="Num to multiply by 2.")
+    @cmd2.with_argparser(mul_parser)
+    def do_mul(self, args):
+        if (self.sock is None):
+            print("Not connected.")
+        mul_packet = self._make_packet(PacketType.MUL, args.num)
+        send_all(self.sock, mul_packet)
+        type, expected_len = self._check_packet_type(self.sock)
+
+        if (type != PacketType.MUL):
+            print("Invalid reply revcd")
+            return
+        response = recv_expected(self.sock, expected_len)
+        
+        if response:
+            result = struct.unpack("!I", response)[0]
+            print(f"Reply: {result}")
+        else:
+            print(f"Error: Failed to receive valid response data. {response}")
+
+    def do_ping(self, args):
+        if (self.sock is None):
+            print("Not connected.")
+        ping_packet = self._make_packet(PacketType.PING, None)
+        send_all(self.sock, ping_packet)
+        print("Ping packet sent")
+        type, _ = self._check_packet_type(self.sock)
+        if (type != PacketType.PING):
+            print("Invalid reply revcd")
+            return
+        print("Recieved ping back. Success!")
 
     def _make_packet(self, PacketType, data):
         match PacketType:
             case PacketType.PING:
                 print("Making Ping Packet")
+                response_packet = Packet(p_type=PacketType.PING).pack()
             case PacketType.MUL:
                 print("Making Mul Packet")
+                response_packet = Packet(p_type=PacketType.MUL, payload=data).pack()
             case PacketType.ECHO:
                 print("Making Echo Packet")
                 response_packet = Packet(p_type=PacketType.ECHO, payload=data).pack()

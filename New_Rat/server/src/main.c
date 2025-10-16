@@ -74,9 +74,34 @@ int main()
             {
             case PING:
                 printf("Ping packet recvd.\n");
+                p_ping_t *ping_reply = calloc(1, sizeof(ping_reply));
+                ping_reply->header.msg_type = PING;
+
+                uint8_t *pingsendbuff = malloc(sizeof(p_header_t));
+                memcpy(pingsendbuff, ping_reply, sizeof(p_header_t));
+                send_all(new_socket, pingsendbuff, sizeof(p_header_t));
                 break;
             case MUL:
                 printf("Mul packet recvd.\n");
+                p_mul_t *mul_reply = calloc(1, sizeof(p_mul_t));
+                mul_reply->header.msg_type = MUL;
+                mul_reply->header.p_len = htonl(sizeof(uint32_t));
+
+                uint8_t *mulsendbuff = malloc(sizeof(p_header_t) + sizeof(uint32_t));
+
+                uint32_t received_num = 0, product = 0;
+                memcpy(&received_num, data, sizeof(received_num));
+                received_num = ntohl(received_num);
+                printf("Recvd Num: %d\n", received_num);
+                product = received_num * 2;
+                printf("Product: %d\n", product);
+                mul_reply->num = htonl(product);
+
+                // Serialize header + payload
+                memcpy(mulsendbuff, &mul_reply->header, sizeof(p_header_t));
+                memcpy(mulsendbuff + sizeof(p_header_t), &mul_reply->num, sizeof(u_int32_t));
+                send_all(new_socket, mulsendbuff, sizeof(p_header_t) + htonl(header.p_len));
+
                 break;
             case ECHO:
                 printf("Echo packet recvd.\n");
