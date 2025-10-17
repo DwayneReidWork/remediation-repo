@@ -8,7 +8,7 @@
 
 #include "../include/utils.h"
 #include "../include/netcomm.h"
-#define BASE_PATH "./"
+#define BASE_PATH "../"
 
 int main()
 {
@@ -82,6 +82,7 @@ int main()
                 uint8_t *pingsendbuff = malloc(sizeof(p_header_t));
                 memcpy(pingsendbuff, ping_reply, sizeof(p_header_t));
                 send_all(new_socket, pingsendbuff, sizeof(p_header_t));
+                free(ping_reply);
                 break;
             case MUL:
                 printf("Mul packet recvd.\n");
@@ -103,19 +104,21 @@ int main()
                 memcpy(mulsendbuff, &mul_reply->header, sizeof(p_header_t));
                 memcpy(mulsendbuff + sizeof(p_header_t), &mul_reply->num, sizeof(u_int32_t));
                 send_all(new_socket, mulsendbuff, sizeof(p_header_t) + htonl(header.p_len));
-
+                free(mulsendbuff);
+                free(mul_reply);
                 break;
             case ECHO:
                 printf("Echo packet recvd.\n");
                 // calloc 1 element of x size
-                p_echo_t *echo_reply = calloc(1, sizeof(echo_reply));
-                printf("Data recvd: %s\n", data);
+                p_echo_t *echo_reply = calloc(1, sizeof(p_echo_t));
+                // printf("Data recvd: %s\n", data);
                 echo_reply->header.msg_type = ECHO;
                 int len = htonl(header.p_len);
 
                 echo_reply->data = calloc(len + 1, sizeof(char));
                 echo_reply->header.p_len = htonl(len);
                 strncpy((char *)echo_reply->data, (char *)data, len);
+                echo_reply->data[len] = '\0';
 
                 // SERIALIZE SERIALIZE SERIALIZE
                 // Size of header + P_len
@@ -127,6 +130,9 @@ int main()
 
                 send_all(new_socket, (uint8_t *)sendbuff, sizeof(p_header_t) + len);
                 printf("Echo Reply Sent.\n");
+                free(echo_reply->data);
+                free(echo_reply);
+                free(sendbuff);
                 break;
             case SHOW:
                 printf("Show packet recvd.\n");

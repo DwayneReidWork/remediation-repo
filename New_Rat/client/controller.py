@@ -41,15 +41,6 @@ class Packet:
         header = struct.pack(self.HEADER_FORMAT, self.p_type, self.packet_size)
         return header + self.payload
 
-    # @classmethod
-    # def unpack(cls, data: bytes):
-    #     """Deserialize a packet from bytes."""
-    #     header_size = struct.calcsize(cls.HEADER_FORMAT)
-    #     p_type, payload_len = struct.unpack(cls.HEADER_FORMAT, data[:header_size])
-    #     payload = data[header_size:header_size + payload_len]
-    #     return cls(PacketType(p_type), payload)
-
-
 class Client():
     def __init__(self,client_socket: socket.socket, address:tuple[str,int]):
         super().__init__(daemon=True)
