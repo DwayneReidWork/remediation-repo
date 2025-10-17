@@ -85,7 +85,7 @@ class CmdController(cmd2.Cmd):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((str(args.host), (args.port)))
         response = recv_expected(self.sock, 17)
-        print(f"Response: {response}")
+        print(f"Response: {response.decode()}")
 
     str_parser = cmd2.Cmd2ArgumentParser()
     str_parser.add_argument('string', action='store', nargs='?', type=str, help="String you want echo'd back.")
@@ -142,6 +142,26 @@ class CmdController(cmd2.Cmd):
             print("Invalid reply revcd")
             return
         print("Recieved ping back. Success!")
+    
+    def do_show(self, args):
+        if (self.sock is None):
+            print("Not connected.")
+        show_packet = self._make_packet(PacketType.SHOW, None)
+        send_all(self.sock, show_packet)
+        print("Show packet sent")
+        type, expected_len = self._check_packet_type(self.sock)
+        if (type != PacketType.SHOW):
+            print("Invalid reply revcd")
+            return
+        response = recv_expected(self.sock, expected_len)
+        
+        if response:         
+            filenames = parse_file_list(response)
+            print("Files:")
+            for f in filenames:
+                print(f" - {f}")
+        else:
+            print(f"Error: Failed to receive valid response data. {response}")
 
     def _make_packet(self, PacketType, data):
         match PacketType:
@@ -156,6 +176,7 @@ class CmdController(cmd2.Cmd):
                 response_packet = Packet(p_type=PacketType.ECHO, payload=data).pack()
             case PacketType.SHOW:
                 print("Making Show Packet")
+                response_packet = Packet(p_type=PacketType.SHOW).pack()
             case _:
                 print("Invalid something recvd")
             
@@ -177,3 +198,25 @@ class CmdController(cmd2.Cmd):
             raise ValueError(f"Unknown packet type: {raw_type}")
 
         return packet_type, expected_len
+    
+def parse_file_list(data: bytes) -> list[str]:
+    if not data:
+        return []
+
+    pos = 0
+    filenames = []
+
+    while pos < len(data):
+        if pos >= len(data):
+            raise ValueError("Not enough bytes for name_len")
+        
+        name_len = data[pos]
+        pos += 1
+
+        if pos + name_len > len(data):
+            raise ValueError("Not enough bytes for filename")
+        
+        name = data[pos:pos+name_len].decode()
+        pos += name_len
+        filenames.append(name)
+    return filenames

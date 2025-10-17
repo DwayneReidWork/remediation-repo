@@ -33,12 +33,15 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
     p_header_t header;
-    uint8_t *data;
+    char *data;
 } p_echo_t;
 
 typedef struct __attribute__((__packed__))
 {
     p_header_t header;
+    uint8_t file_count;
+    uint8_t *FileNameLen;
+    char **FileName;
 } p_show_t;
 
 int receive_packet(int client_sock, p_header_t *header, uint8_t **dest);
