@@ -11,10 +11,10 @@ def main():
     data = load_file()
     #user_search(data) #returns all usernames
     #timestamp_search(data)
-    http_search(data) #search for get/put/post/delete
+    #http_search(data) #search for get/put/post/delete
     #api_endpoint_search(data)
     #response_size_search(data)
-    #frank_search(data) #search for all frank 403 errors
+    frank_search(data) #search for all frank 403 errors
 
 def load_file():
     try:
@@ -24,14 +24,11 @@ def load_file():
         raise FileNotFoundError
     return data
     
-
-
 def user_search(data):
     for line in data.strip().split("\n"):
         match = pattern.search(line)
         if match:
             print(match.group(5))
-
 
 def timestamp_search(data):
     for line in data.strip().split("\n"):

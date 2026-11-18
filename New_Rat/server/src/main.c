@@ -5,7 +5,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 #include "../include/utils.h"
 #include "../include/netcomm.h"
 #define BASE_PATH "../"
@@ -111,7 +110,8 @@ int main()
                 printf("Echo packet recvd.\n");
                 // calloc 1 element of x size
                 p_echo_t *echo_reply = calloc(1, sizeof(p_echo_t));
-                // printf("Data recvd: %s\n", data);
+                // This line was he memory leak. Printing non null terminated data.
+                printf("Data recvd: %s\n", data);
                 echo_reply->header.msg_type = ECHO;
                 int len = htonl(header.p_len);
 
@@ -169,6 +169,7 @@ int main()
                         file_list.FileName = newNames;
                         file_list.FileNameLen = newLens;
 
+                        // Save name to temp to then copy into struct
                         char *temp = strdup(ent->d_name);
                         if (!temp)
                         {
